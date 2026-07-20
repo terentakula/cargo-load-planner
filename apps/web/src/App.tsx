@@ -1,15 +1,24 @@
 import { PlannerScene } from "./components/scene/PlannerScene";
 import { usePlannerStore } from "./features/planner/store/usePlannerStore";
 import "./App.css";
+import { isCargoPositionAvailable } from "./features/planner/lib/collision";
+import {
+  getRotatedCargoOrientation,
+  type CargoRotationAxis,
+} from "./features/planner/lib/orientation";
 
 function App() {
   const cargoTemplates = usePlannerStore((state) => state.cargoTemplates);
+
+  const cargoSpace = usePlannerStore((state) => state.cargoSpace);
 
   const placedCargo = usePlannerStore((state) => state.placedCargo);
 
   const selectedCargoId = usePlannerStore((state) => state.selectedCargoId);
 
   const selectCargo = usePlannerStore((state) => state.selectCargo);
+
+  const rotateCargo = usePlannerStore((state) => state.rotateCargo);
 
   const selectedCargo = placedCargo.find(
     (cargo) => cargo.id === selectedCargoId,
@@ -20,6 +29,49 @@ function App() {
         (template) => template.id === selectedCargo.templateId,
       )
     : null;
+
+  const canRotateSelectedCargo = (axis: CargoRotationAxis): boolean => {
+    if (!selectedCargo || !selectedTemplate) {
+      return false;
+    }
+
+    const requiresTilting = axis === "x" || axis === "z";
+
+    if (requiresTilting && !selectedTemplate.canBeTilted) {
+      return false;
+    }
+
+    const nextOrientation = getRotatedCargoOrientation(
+      selectedCargo.orientation,
+      axis,
+    );
+
+    return isCargoPositionAvailable({
+      cargoId: selectedCargo.id,
+      position: selectedCargo.position,
+      orientation: nextOrientation,
+      cargoSpace,
+      placedCargo,
+      cargoTemplates,
+    });
+  };
+
+  const handleRotateCargo = (axis: CargoRotationAxis) => {
+    if (!selectedCargo || !canRotateSelectedCargo(axis)) {
+      return;
+    }
+
+    const nextOrientation = getRotatedCargoOrientation(
+      selectedCargo.orientation,
+      axis,
+    );
+
+    rotateCargo(selectedCargo.id, nextOrientation);
+  };
+
+  const canRotateX = canRotateSelectedCargo("x");
+  const canRotateY = canRotateSelectedCargo("y");
+  const canRotateZ = canRotateSelectedCargo("z");
 
   const totalWeightKg = placedCargo.reduce((totalWeight, cargo) => {
     const cargoTemplate = cargoTemplates.find(
@@ -124,7 +176,14 @@ function App() {
             </span>
 
             <span className="viewport__hint">
-              Красный груз означает пересечение
+              Красный цвет означает пересечение грузов
+            </span>
+            <span className="viewport__hint">
+              Переместите груз над коробкой, чтобы установить его сверху
+            </span>
+            <span className="viewport__hint">
+              Красный груз означает недопустимое положение или превышение
+              нагрузки
             </span>
           </div>
 
@@ -216,12 +275,63 @@ function App() {
                 </div>
 
                 <div className="property-list__row">
+                  <dt>Макс. нагрузка сверху</dt>
+                  <dd>
+                    {!selectedTemplate.stackable
+                      ? "Не допускается"
+                      : selectedTemplate.maxTopLoadKg === null
+                        ? "Без ограничения"
+                        : `${selectedTemplate.maxTopLoadKg} кг`}
+                  </dd>
+                </div>
+
+                <div className="property-list__row">
                   <dt>Кантование</dt>
                   <dd>
                     {selectedTemplate.canBeTilted ? "Разрешено" : "Запрещено"}
                   </dd>
                 </div>
               </dl>
+
+              <div className="rotation-controls">
+                <div>
+                  <p className="rotation-controls__title">Поворот на 90°</p>
+
+                  <p className="rotation-controls__description">
+                    Недоступный поворот создаёт пересечение, выходит за границы
+                    кузова или запрещён для этого груза.
+                  </p>
+                </div>
+
+                <div className="rotation-controls__buttons">
+                  <button
+                    className="rotation-button"
+                    type="button"
+                    disabled={!canRotateX}
+                    onClick={() => handleRotateCargo("x")}
+                  >
+                    По X
+                  </button>
+
+                  <button
+                    className="rotation-button"
+                    type="button"
+                    disabled={!canRotateY}
+                    onClick={() => handleRotateCargo("y")}
+                  >
+                    По Y
+                  </button>
+
+                  <button
+                    className="rotation-button"
+                    type="button"
+                    disabled={!canRotateZ}
+                    onClick={() => handleRotateCargo("z")}
+                  >
+                    По Z
+                  </button>
+                </div>
+              </div>
             </>
           ) : (
             <div className="empty-state">

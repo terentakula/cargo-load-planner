@@ -19,6 +19,7 @@ type Props = {
   cargoSpace: CargoSpace;
   cargoTemplate: CargoTemplate;
   placedCargo: PlacedCargo;
+  draggable: boolean;
   selected: boolean;
   onSelect: (cargoId: string) => void;
   onMove: (cargoId: string, position: CargoPosition) => void;
@@ -26,6 +27,10 @@ type Props = {
   onDragEnd: () => void;
   isPositionValid: (cargoId: string, position: CargoPosition) => boolean;
   getSnappedPosition: (
+    cargoId: string,
+    position: CargoPosition,
+  ) => CargoPosition;
+  getSupportedPosition: (
     cargoId: string,
     position: CargoPosition,
   ) => CargoPosition;
@@ -58,6 +63,7 @@ export function CargoMesh({
   cargoSpace,
   cargoTemplate,
   placedCargo,
+  draggable,
   selected,
   onSelect,
   onMove,
@@ -65,6 +71,7 @@ export function CargoMesh({
   onDragEnd,
   isPositionValid,
   getSnappedPosition,
+  getSupportedPosition,
 }: Props) {
   const [previewPosition, setPreviewPosition] = useState<CargoPosition | null>(
     null,
@@ -143,6 +150,22 @@ export function CargoMesh({
     onDragEnd();
   };
 
+  const dragDisabled = placedCargo.locked || !draggable;
+
+  const handlePointerEnter = () => {
+    if (activePointerId.current !== null) {
+      return;
+    }
+
+    document.body.style.cursor = dragDisabled ? "not-allowed" : "grab";
+  };
+
+  const handlePointerLeave = () => {
+    if (activePointerId.current === null) {
+      document.body.style.cursor = "";
+    }
+  };
+
   const handlePointerDown = (event: ThreeEvent<PointerEvent>) => {
     if (event.button !== 0) {
       return;
@@ -151,7 +174,7 @@ export function CargoMesh({
     event.stopPropagation();
     onSelect(placedCargo.id);
 
-    if (placedCargo.locked) {
+    if (dragDisabled) {
       return;
     }
 
@@ -192,7 +215,7 @@ export function CargoMesh({
   };
 
   const handlePointerMove = (event: ThreeEvent<PointerEvent>) => {
-    if (activePointerId.current !== event.pointerId || placedCargo.locked) {
+    if (activePointerId.current !== event.pointerId || dragDisabled) {
       return;
     }
 
@@ -217,15 +240,31 @@ export function CargoMesh({
 
     const snappedPosition = getSnappedPosition(placedCargo.id, rawPosition);
 
-    const snappedPositionValid = isPositionValid(
+    const supportedSnappedPosition = getSupportedPosition(
       placedCargo.id,
       snappedPosition,
     );
 
-    const nextPosition = snappedPositionValid ? snappedPosition : rawPosition;
+    const supportedRawPosition = getSupportedPosition(
+      placedCargo.id,
+      rawPosition,
+    );
 
-    const valid =
-      snappedPositionValid || isPositionValid(placedCargo.id, rawPosition);
+    const snappedPositionValid = isPositionValid(
+      placedCargo.id,
+      supportedSnappedPosition,
+    );
+
+    const rawPositionValid = isPositionValid(
+      placedCargo.id,
+      supportedRawPosition,
+    );
+
+    const nextPosition = snappedPositionValid
+      ? supportedSnappedPosition
+      : supportedRawPosition;
+
+    const valid = snappedPositionValid || rawPositionValid;
 
     previewPositionRef.current = nextPosition;
     previewValidRef.current = valid;
@@ -274,6 +313,8 @@ export function CargoMesh({
       position={position}
       castShadow
       receiveShadow
+      onPointerEnter={handlePointerEnter}
+      onPointerLeave={handlePointerLeave}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}

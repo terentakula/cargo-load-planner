@@ -1,5 +1,12 @@
-import type { CargoPosition, CargoTemplate, PlacedCargo } from "../model/types";
+import type {
+  CargoPosition,
+  CargoTemplate,
+  PlacedCargo,
+  CargoOrientation,
+  CargoSpace,
+} from "../model/types";
 import { getOrientedCargoSize } from "./orientation";
+import { isCargoStackValid } from "./load";
 
 export type CargoBounds = {
   minX: number;
@@ -15,6 +22,8 @@ type PositionValidationInput = {
   position: CargoPosition;
   placedCargo: PlacedCargo[];
   cargoTemplates: CargoTemplate[];
+  orientation?: CargoOrientation;
+  cargoSpace: CargoSpace;
 };
 
 export function getCargoBounds(
@@ -56,6 +65,8 @@ export function isCargoPositionAvailable({
   position,
   placedCargo,
   cargoTemplates,
+  orientation,
+  cargoSpace,
 }: PositionValidationInput): boolean {
   const movingCargo = placedCargo.find((cargo) => cargo.id === cargoId);
 
@@ -74,11 +85,24 @@ export function isCargoPositionAvailable({
   const candidateCargo: PlacedCargo = {
     ...movingCargo,
     position,
+    orientation: orientation ?? movingCargo.orientation,
   };
 
   const candidateBounds = getCargoBounds(movingTemplate, candidateCargo);
 
-  return placedCargo.every((otherCargo) => {
+  const insideCargoSpace =
+    candidateBounds.minX >= 0 &&
+    candidateBounds.minY >= 0 &&
+    candidateBounds.minZ >= 0 &&
+    candidateBounds.maxX <= cargoSpace.lengthMm &&
+    candidateBounds.maxY <= cargoSpace.heightMm &&
+    candidateBounds.maxZ <= cargoSpace.widthMm;
+
+  if (!insideCargoSpace) {
+    return false;
+  }
+
+  const collisionFree = placedCargo.every((otherCargo) => {
     if (otherCargo.id === cargoId) {
       return true;
     }
@@ -94,5 +118,16 @@ export function isCargoPositionAvailable({
     const otherBounds = getCargoBounds(otherTemplate, otherCargo);
 
     return !cargoBoundsIntersect(candidateBounds, otherBounds);
+  });
+  if (!collisionFree) {
+    return false;
+  }
+
+  return isCargoStackValid({
+    cargoId,
+    position,
+    orientation,
+    placedCargo,
+    cargoTemplates,
   });
 }

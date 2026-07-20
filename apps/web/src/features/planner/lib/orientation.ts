@@ -42,3 +42,35 @@ export function getOrientedCargoSize(
     }
   }
 }
+
+export type CargoRotationAxis = 'x' | 'y' | 'z'
+
+export function getRotatedCargoOrientation(
+  orientation: CargoOrientation,
+  axis: CargoRotationAxis,
+): CargoOrientation {
+  const dimensions = orientation.split('')
+
+  switch (axis) {
+    case 'x':
+      return [
+        dimensions[0],
+        dimensions[2],
+        dimensions[1],
+      ].join('') as CargoOrientation
+
+    case 'y':
+      return [
+        dimensions[2],
+        dimensions[1],
+        dimensions[0],
+      ].join('') as CargoOrientation
+
+    case 'z':
+      return [
+        dimensions[1],
+        dimensions[0],
+        dimensions[2],
+      ].join('') as CargoOrientation
+  }
+}

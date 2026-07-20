@@ -9,6 +9,7 @@ import type {
   CargoSpace,
   CargoTemplate,
   PlacedCargo,
+  CargoOrientation,
 } from '../model/types'
 
 type PlannerState = {
@@ -22,6 +23,10 @@ type PlannerState = {
     cargoId: string,
     position: CargoPosition,
   ) => void
+  rotateCargo: (
+  cargoId: string,
+  orientation: CargoOrientation,
+) => void
 }
 
 export const usePlannerStore = create<PlannerState>((set) => ({
@@ -48,4 +53,16 @@ export const usePlannerStore = create<PlannerState>((set) => ({
       ),
     }))
   },
+  rotateCargo: (cargoId, orientation) => {
+  set((state) => ({
+    placedCargo: state.placedCargo.map((cargo) =>
+      cargo.id === cargoId
+        ? {
+            ...cargo,
+            orientation,
+          }
+        : cargo,
+    ),
+  }))
+},
 }))

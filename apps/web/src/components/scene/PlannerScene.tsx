@@ -1,80 +1,74 @@
-import { useState, useCallback } from 'react'
-import { Canvas } from '@react-three/fiber'
+import { useState, useCallback } from "react";
+import { Canvas } from "@react-three/fiber";
 import {
   GizmoHelper,
   GizmoViewport,
   Grid,
   OrbitControls,
-} from '@react-three/drei'
-import { usePlannerStore } from '../../features/planner/store/usePlannerStore'
-import { CargoMesh } from './CargoMesh'
-import { CargoSpace } from './CargoSpace'
-import { isCargoPositionAvailable } from '../../features/planner/lib/collision'
-import type { CargoPosition } from '../../features/planner/model/types'
-import { getSnappedCargoPosition } from '../../features/planner/lib/snapping'
+} from "@react-three/drei";
+import { usePlannerStore } from "../../features/planner/store/usePlannerStore";
+import { CargoMesh } from "./CargoMesh";
+import { CargoSpace } from "./CargoSpace";
+import { isCargoPositionAvailable } from "../../features/planner/lib/collision";
+import type { CargoPosition } from "../../features/planner/model/types";
+import { getSnappedCargoPosition } from "../../features/planner/lib/snapping";
+import {
+  getSupportedCargoPosition,
+  isCargoSupportingAnotherCargo,
+} from "../../features/planner/lib/support";
 
 export function PlannerScene() {
-  const [draggingCargoId, setDraggingCargoId] =
-    useState<string | null>(null)
+  const [draggingCargoId, setDraggingCargoId] = useState<string | null>(null);
 
-  const cargoSpace = usePlannerStore(
-    (state) => state.cargoSpace,
-  )
+  const cargoSpace = usePlannerStore((state) => state.cargoSpace);
 
-  const cargoTemplates = usePlannerStore(
-    (state) => state.cargoTemplates,
-  )
+  const cargoTemplates = usePlannerStore((state) => state.cargoTemplates);
 
-  const placedCargo = usePlannerStore(
-    (state) => state.placedCargo,
-  )
+  const placedCargo = usePlannerStore((state) => state.placedCargo);
 
-  const selectedCargoId = usePlannerStore(
-    (state) => state.selectedCargoId,
-  )
+  const selectedCargoId = usePlannerStore((state) => state.selectedCargoId);
 
-  const selectCargo = usePlannerStore(
-    (state) => state.selectCargo,
-  )
+  const selectCargo = usePlannerStore((state) => state.selectCargo);
 
-  const moveCargo = usePlannerStore(
-    (state) => state.moveCargo,
-  )
+  const moveCargo = usePlannerStore((state) => state.moveCargo);
 
   const validateCargoPosition = useCallback(
-  (
-    cargoId: string,
-    position: CargoPosition,
-  ) => {
-    return isCargoPositionAvailable({
-      cargoId,
-      position,
-      placedCargo,
-      cargoTemplates,
-    })
-  },
-  [cargoTemplates, placedCargo],
-)
+    (cargoId: string, position: CargoPosition) => {
+      return isCargoPositionAvailable({
+        cargoId,
+        position,
+        placedCargo,
+        cargoTemplates,
+        cargoSpace,
+      });
+    },
+    [cargoSpace, cargoTemplates, placedCargo],
+  );
 
-const snapCargoPosition = useCallback(
-  (
-    cargoId: string,
-    position: CargoPosition,
-  ): CargoPosition => {
-    return getSnappedCargoPosition({
-      cargoId,
-      position,
-      cargoSpace,
-      placedCargo,
-      cargoTemplates,
-    })
-  },
-  [
-    cargoSpace,
-    cargoTemplates,
-    placedCargo,
-  ],
-)
+  const snapCargoPosition = useCallback(
+    (cargoId: string, position: CargoPosition): CargoPosition => {
+      return getSnappedCargoPosition({
+        cargoId,
+        position,
+        cargoSpace,
+        placedCargo,
+        cargoTemplates,
+      });
+    },
+    [cargoSpace, cargoTemplates, placedCargo],
+  );
+
+  const supportCargoPosition = useCallback(
+    (cargoId: string, position: CargoPosition): CargoPosition => {
+      return getSupportedCargoPosition({
+        cargoId,
+        position,
+        placedCargo,
+        cargoTemplates,
+      });
+    },
+    [cargoTemplates, placedCargo],
+  );
 
   return (
     <Canvas
@@ -87,11 +81,11 @@ const snapCargoPosition = useCallback(
       }}
       onPointerMissed={() => {
         if (draggingCargoId === null) {
-          selectCargo(null)
+          selectCargo(null);
         }
       }}
     >
-      <color attach="background" args={['#111827']} />
+      <color attach="background" args={["#111827"]} />
 
       <ambientLight intensity={0.65} />
 
@@ -122,11 +116,17 @@ const snapCargoPosition = useCallback(
       {placedCargo.map((cargo) => {
         const cargoTemplate = cargoTemplates.find(
           (template) => template.id === cargo.templateId,
-        )
+        );
 
         if (!cargoTemplate) {
-          return null
+          return null;
         }
+
+        const supportsAnotherCargo = isCargoSupportingAnotherCargo({
+          cargoId: cargo.id,
+          placedCargo,
+          cargoTemplates,
+        });
 
         return (
           <CargoMesh
@@ -134,17 +134,19 @@ const snapCargoPosition = useCallback(
             cargoSpace={cargoSpace}
             cargoTemplate={cargoTemplate}
             placedCargo={cargo}
+            draggable={!supportsAnotherCargo}
             selected={cargo.id === selectedCargoId}
             onSelect={selectCargo}
             onMove={moveCargo}
             onDragStart={(cargoId) => {
-              setDraggingCargoId(cargoId)
+              setDraggingCargoId(cargoId);
             }}
             onDragEnd={() => setDraggingCargoId(null)}
             isPositionValid={validateCargoPosition}
             getSnappedPosition={snapCargoPosition}
+            getSupportedPosition={supportCargoPosition}
           />
-        )
+        );
       })}
 
       <OrbitControls
@@ -158,19 +160,12 @@ const snapCargoPosition = useCallback(
         target={[0, 1, 0]}
       />
 
-      <GizmoHelper
-        alignment="bottom-right"
-        margin={[80, 80]}
-      >
+      <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
         <GizmoViewport
-          axisColors={[
-            '#ef4444',
-            '#22c55e',
-            '#3b82f6',
-          ]}
+          axisColors={["#ef4444", "#22c55e", "#3b82f6"]}
           labelColor="#111827"
         />
       </GizmoHelper>
     </Canvas>
-  )
+  );
 }
