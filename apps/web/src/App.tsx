@@ -8,6 +8,7 @@ import {
 } from "./features/planner/lib/orientation";
 import { getCargoTopLoadKg } from "./features/planner/lib/load";
 import { findAvailableFloorPosition } from "./features/planner/lib/placement";
+import { isCargoSupportingAnotherCargo } from "./features/planner/lib/support";
 
 function App() {
   const cargoTemplates = usePlannerStore((state) => state.cargoTemplates);
@@ -26,6 +27,8 @@ function App() {
 
   const duplicateCargo = usePlannerStore((state) => state.duplicateCargo);
 
+  const removeCargo = usePlannerStore((state) => state.removeCargo);
+
   const selectedCargo = placedCargo.find(
     (cargo) => cargo.id === selectedCargoId,
   );
@@ -43,6 +46,14 @@ function App() {
         cargoTemplates,
       })
     : 0;
+
+  const selectedCargoSupportsAnotherCargo = selectedCargo
+    ? isCargoSupportingAnotherCargo({
+        cargoId: selectedCargo.id,
+        placedCargo,
+        cargoTemplates,
+      })
+    : false;
 
   const selectedCargoRemainingTopLoadKg =
     selectedTemplate?.maxTopLoadKg === null ||
@@ -130,6 +141,22 @@ function App() {
     }
 
     duplicateCargo(selectedCargo.id, duplicateCargoId, availablePosition);
+  };
+
+  const handleRemoveCargo = () => {
+    if (!selectedCargo || selectedCargoSupportsAnotherCargo) {
+      return;
+    }
+
+    const cargoName = selectedTemplate?.name ?? selectedCargo.id;
+
+    const confirmed = window.confirm(`Удалить груз «${cargoName}»?`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    removeCargo(selectedCargo.id);
   };
 
   const canRotateX = canRotateSelectedCargo("x");
@@ -440,6 +467,21 @@ function App() {
                     ? "Разблокировать груз"
                     : "Заблокировать груз"}
                 </button>
+
+                <button
+                  className="rotation-button cargo-action-button cargo-action-button--danger"
+                  type="button"
+                  disabled={selectedCargoSupportsAnotherCargo}
+                  onClick={handleRemoveCargo}
+                >
+                  Удалить груз
+                </button>
+
+                {selectedCargoSupportsAnotherCargo && (
+                  <p className="cargo-actions__warning">
+                    Сначала снимите грузы, расположенные сверху.
+                  </p>
+                )}
               </div>
             </>
           ) : (

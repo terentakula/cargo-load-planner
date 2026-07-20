@@ -394,3 +394,20 @@
 .cargo-action-button {
   width: 100%;
 }
+
+.cargo-action-button--danger {
+  border-color: rgba(239, 68, 68, 0.45);
+  color: #fca5a5;
+}
+
+.cargo-action-button--danger:hover:not(:disabled) {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.cargo-actions__warning {
+  margin: 0;
+  color: #fca5a5;
+  font-size: 12px;
+  line-height: 1.45;
+}
