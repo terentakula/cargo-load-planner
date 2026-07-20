@@ -17,6 +17,12 @@ type StackValidationInput = {
   cargoTemplates: CargoTemplate[]
 }
 
+type CargoTopLoadInput = {
+  cargoId: string
+  placedCargo: PlacedCargo[]
+  cargoTemplates: CargoTemplate[]
+}
+
 type CargoNode = {
   cargo: PlacedCargo
   template: CargoTemplate
@@ -239,4 +245,111 @@ export function isCargoStackValid({
   }
 
   return true
+}
+
+export function getCargoTopLoadKg({
+  cargoId,
+  placedCargo,
+  cargoTemplates,
+}: CargoTopLoadInput): number {
+  const calculateTopLoad = (
+    currentCargoId: string,
+    visitedCargoIds: Set<string>,
+  ): number => {
+    if (visitedCargoIds.has(currentCargoId)) {
+      return 0
+    }
+
+    const currentCargo = placedCargo.find(
+      (cargo) => cargo.id === currentCargoId,
+    )
+
+    if (!currentCargo) {
+      return 0
+    }
+
+    const currentTemplate = cargoTemplates.find(
+      (template) =>
+        template.id === currentCargo.templateId,
+    )
+
+    if (!currentTemplate) {
+      return 0
+    }
+
+    const currentSize = getOrientedCargoSize(
+      currentTemplate,
+      currentCargo.orientation,
+    )
+
+    const currentTopY =
+      currentCargo.position.yMm +
+      currentSize.yMm
+
+    const nextVisitedCargoIds = new Set(
+      visitedCargoIds,
+    )
+
+    nextVisitedCargoIds.add(currentCargoId)
+
+    return placedCargo.reduce(
+      (totalWeightKg, otherCargo) => {
+        if (
+          otherCargo.id === currentCargoId ||
+          otherCargo.position.yMm !== currentTopY
+        ) {
+          return totalWeightKg
+        }
+
+        const otherTemplate = cargoTemplates.find(
+          (template) =>
+            template.id === otherCargo.templateId,
+        )
+
+        if (!otherTemplate) {
+          return totalWeightKg
+        }
+
+        const otherSize = getOrientedCargoSize(
+          otherTemplate,
+          otherCargo.orientation,
+        )
+
+        const supportedByX =
+          otherCargo.position.xMm >=
+            currentCargo.position.xMm &&
+          otherCargo.position.xMm +
+            otherSize.xMm <=
+            currentCargo.position.xMm +
+              currentSize.xMm
+
+        const supportedByZ =
+          otherCargo.position.zMm >=
+            currentCargo.position.zMm &&
+          otherCargo.position.zMm +
+            otherSize.zMm <=
+            currentCargo.position.zMm +
+              currentSize.zMm
+
+        if (!supportedByX || !supportedByZ) {
+          return totalWeightKg
+        }
+
+        return (
+          totalWeightKg +
+          otherTemplate.weightKg +
+          calculateTopLoad(
+            otherCargo.id,
+            nextVisitedCargoIds,
+          )
+        )
+      },
+      0,
+    )
+  }
+
+  return calculateTopLoad(
+    cargoId,
+    new Set(),
+  )
 }

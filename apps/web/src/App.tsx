@@ -6,6 +6,7 @@ import {
   getRotatedCargoOrientation,
   type CargoRotationAxis,
 } from "./features/planner/lib/orientation";
+import { getCargoTopLoadKg } from "./features/planner/lib/load";
 
 function App() {
   const cargoTemplates = usePlannerStore((state) => state.cargoTemplates);
@@ -29,6 +30,20 @@ function App() {
         (template) => template.id === selectedCargo.templateId,
       )
     : null;
+
+  const selectedCargoTopLoadKg = selectedCargo
+    ? getCargoTopLoadKg({
+        cargoId: selectedCargo.id,
+        placedCargo,
+        cargoTemplates,
+      })
+    : 0;
+
+  const selectedCargoRemainingTopLoadKg =
+    selectedTemplate?.maxTopLoadKg === null ||
+    selectedTemplate?.maxTopLoadKg === undefined
+      ? null
+      : Math.max(0, selectedTemplate.maxTopLoadKg - selectedCargoTopLoadKg);
 
   const canRotateSelectedCargo = (axis: CargoRotationAxis): boolean => {
     if (!selectedCargo || !selectedTemplate) {
@@ -282,6 +297,26 @@ function App() {
                       : selectedTemplate.maxTopLoadKg === null
                         ? "Без ограничения"
                         : `${selectedTemplate.maxTopLoadKg} кг`}
+                  </dd>
+                </div>
+
+                <div className="property-list__row">
+                  <dt>Текущая нагрузка сверху</dt>
+                  <dd>
+                    {selectedTemplate.stackable
+                      ? `${selectedCargoTopLoadKg} кг`
+                      : "Не допускается"}
+                  </dd>
+                </div>
+
+                <div className="property-list__row">
+                  <dt>Остаток нагрузки</dt>
+                  <dd>
+                    {!selectedTemplate.stackable
+                      ? "Не допускается"
+                      : selectedCargoRemainingTopLoadKg === null
+                        ? "Без ограничения"
+                        : `${selectedCargoRemainingTopLoadKg} кг`}
                   </dd>
                 </div>
 
