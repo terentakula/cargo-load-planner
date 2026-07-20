@@ -3,25 +3,22 @@ import type {
   CargoSpace,
   CargoTemplate,
   PlacedCargo,
-} from '../model/types'
+} from "../model/types";
+import { getOrientedCargoSize } from "./orientation";
 
 type SnapCargoPositionInput = {
-  cargoId: string
-  position: CargoPosition
-  cargoSpace: CargoSpace
-  placedCargo: PlacedCargo[]
-  cargoTemplates: CargoTemplate[]
-  thresholdMm?: number
-}
+  cargoId: string;
+  position: CargoPosition;
+  cargoSpace: CargoSpace;
+  placedCargo: PlacedCargo[];
+  cargoTemplates: CargoTemplate[];
+  thresholdMm?: number;
+};
 
-const DEFAULT_SNAP_THRESHOLD_MM = 100
+const DEFAULT_SNAP_THRESHOLD_MM = 100;
 
-function clamp(
-  value: number,
-  minimum: number,
-  maximum: number,
-): number {
-  return Math.min(Math.max(value, minimum), maximum)
+function clamp(value: number, minimum: number, maximum: number): number {
+  return Math.min(Math.max(value, minimum), maximum);
 }
 
 function rangesOverlap(
@@ -30,10 +27,7 @@ function rangesOverlap(
   secondStart: number,
   secondEnd: number,
 ): boolean {
-  return (
-    firstStart < secondEnd &&
-    firstEnd > secondStart
-  )
+  return firstStart < secondEnd && firstEnd > secondStart;
 }
 
 function findNearestCandidate(
@@ -41,21 +35,19 @@ function findNearestCandidate(
   candidates: number[],
   thresholdMm: number,
 ): number {
-  let nearestValue = value
-  let nearestDistance = thresholdMm + 1
+  let nearestValue = value;
+  let nearestDistance = thresholdMm + 1;
 
   candidates.forEach((candidate) => {
-    const distance = Math.abs(value - candidate)
+    const distance = Math.abs(value - candidate);
 
     if (distance < nearestDistance) {
-      nearestDistance = distance
-      nearestValue = candidate
+      nearestDistance = distance;
+      nearestValue = candidate;
     }
-  })
+  });
 
-  return nearestDistance <= thresholdMm
-    ? nearestValue
-    : value
+  return nearestDistance <= thresholdMm ? nearestValue : value;
 }
 
 export function getSnappedCargoPosition({
@@ -66,91 +58,73 @@ export function getSnappedCargoPosition({
   cargoTemplates,
   thresholdMm = DEFAULT_SNAP_THRESHOLD_MM,
 }: SnapCargoPositionInput): CargoPosition {
-  const movingCargo = placedCargo.find(
-    (cargo) => cargo.id === cargoId,
-  )
+  const movingCargo = placedCargo.find((cargo) => cargo.id === cargoId);
 
   if (!movingCargo) {
-    return position
+    return position;
   }
 
   const movingTemplate = cargoTemplates.find(
-    (template) =>
-      template.id === movingCargo.templateId,
-  )
+    (template) => template.id === movingCargo.templateId,
+  );
 
   if (!movingTemplate) {
-    return position
+    return position;
   }
 
-  const maximumX = Math.max(
-    0,
-    cargoSpace.lengthMm - movingTemplate.lengthMm,
-  )
+  const movingSize = getOrientedCargoSize(
+    movingTemplate,
+    movingCargo.orientation,
+  );
 
-  const maximumZ = Math.max(
-    0,
-    cargoSpace.widthMm - movingTemplate.widthMm,
-  )
+  const maximumX = Math.max(0, cargoSpace.lengthMm - movingSize.xMm);
 
-  const xCandidates = [0, maximumX]
-  const zCandidates = [0, maximumZ]
+  const maximumZ = Math.max(0, cargoSpace.widthMm - movingSize.zMm);
+
+  const xCandidates = [0, maximumX];
+  const zCandidates = [0, maximumZ];
 
   placedCargo.forEach((otherCargo) => {
     if (otherCargo.id === cargoId) {
-      return
+      return;
     }
 
     const otherTemplate = cargoTemplates.find(
-      (template) =>
-        template.id === otherCargo.templateId,
-    )
+      (template) => template.id === otherCargo.templateId,
+    );
 
     if (!otherTemplate) {
-      return
+      return;
     }
 
-    const movingMinX = position.xMm
-    const movingMaxX =
-      position.xMm + movingTemplate.lengthMm
+    const otherSize = getOrientedCargoSize(
+      otherTemplate,
+      otherCargo.orientation,
+    );
 
-    const movingMinZ = position.zMm
-    const movingMaxZ =
-      position.zMm + movingTemplate.widthMm
+    const movingMinX = position.xMm;
+    const movingMaxX = position.xMm + movingSize.xMm;
 
-    const otherMinX = otherCargo.position.xMm
-    const otherMaxX =
-      otherCargo.position.xMm +
-      otherTemplate.lengthMm
+    const movingMinZ = position.zMm;
+    const movingMaxZ = position.zMm + movingSize.zMm;
 
-    const otherMinZ = otherCargo.position.zMm
-    const otherMaxZ =
-      otherCargo.position.zMm +
-      otherTemplate.widthMm
+    const otherMinX = otherCargo.position.xMm;
+    const otherMaxX = otherCargo.position.xMm + otherSize.xMm;
+
+    const otherMinZ = otherCargo.position.zMm;
+    const otherMaxZ = otherCargo.position.zMm + otherSize.zMm;
 
     const overlapsByZ = rangesOverlap(
       movingMinZ,
       movingMaxZ,
       otherMinZ,
       otherMaxZ,
-    )
+    );
 
     if (overlapsByZ) {
-      xCandidates.push(
-        clamp(
-          otherMinX - movingTemplate.lengthMm,
-          0,
-          maximumX,
-        ),
-      )
+      xCandidates.push(clamp(otherMinX - movingSize.xMm, 0, maximumX));
 
-      xCandidates.push(
-        clamp(
-          otherMaxX,
-          0,
-          maximumX,
-        ),
-      )
+      xCandidates.push(clamp(otherMaxX, 0, maximumX));
     }
 
     const overlapsByX = rangesOverlap(
@@ -158,38 +132,18 @@ export function getSnappedCargoPosition({
       movingMaxX,
       otherMinX,
       otherMaxX,
-    )
+    );
 
     if (overlapsByX) {
-      zCandidates.push(
-        clamp(
-          otherMinZ - movingTemplate.widthMm,
-          0,
-          maximumZ,
-        ),
-      )
+      zCandidates.push(clamp(otherMinZ - movingSize.zMm, 0, maximumZ));
 
-      zCandidates.push(
-        clamp(
-          otherMaxZ,
-          0,
-          maximumZ,
-        ),
-      )
+      zCandidates.push(clamp(otherMaxZ, 0, maximumZ));
     }
-  })
+  });
 
   return {
-    xMm: findNearestCandidate(
-      position.xMm,
-      xCandidates,
-      thresholdMm,
-    ),
+    xMm: findNearestCandidate(position.xMm, xCandidates, thresholdMm),
     yMm: position.yMm,
-    zMm: findNearestCandidate(
-      position.zMm,
-      zCandidates,
-      thresholdMm,
-    ),
-  }
+    zMm: findNearestCandidate(position.zMm, zCandidates, thresholdMm),
+  };
 }

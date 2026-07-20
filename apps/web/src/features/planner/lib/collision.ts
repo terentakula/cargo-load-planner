@@ -1,45 +1,40 @@
-import type {
-  CargoPosition,
-  CargoTemplate,
-  PlacedCargo,
-} from '../model/types'
+import type { CargoPosition, CargoTemplate, PlacedCargo } from "../model/types";
+import { getOrientedCargoSize } from "./orientation";
 
 export type CargoBounds = {
-  minX: number
-  maxX: number
-  minY: number
-  maxY: number
-  minZ: number
-  maxZ: number
-}
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+  minZ: number;
+  maxZ: number;
+};
 
 type PositionValidationInput = {
-  cargoId: string
-  position: CargoPosition
-  placedCargo: PlacedCargo[]
-  cargoTemplates: CargoTemplate[]
-}
+  cargoId: string;
+  position: CargoPosition;
+  placedCargo: PlacedCargo[];
+  cargoTemplates: CargoTemplate[];
+};
 
 export function getCargoBounds(
   cargoTemplate: CargoTemplate,
   placedCargo: PlacedCargo,
 ): CargoBounds {
+  const orientedSize = getOrientedCargoSize(
+    cargoTemplate,
+    placedCargo.orientation,
+  );
   return {
     minX: placedCargo.position.xMm,
-    maxX:
-      placedCargo.position.xMm +
-      cargoTemplate.lengthMm,
+    maxX: placedCargo.position.xMm + orientedSize.xMm,
 
     minY: placedCargo.position.yMm,
-    maxY:
-      placedCargo.position.yMm +
-      cargoTemplate.heightMm,
+    maxY: placedCargo.position.yMm + orientedSize.yMm,
 
     minZ: placedCargo.position.zMm,
-    maxZ:
-      placedCargo.position.zMm +
-      cargoTemplate.widthMm,
-  }
+    maxZ: placedCargo.position.zMm + orientedSize.zMm,
+  };
 }
 
 export function cargoBoundsIntersect(
@@ -53,7 +48,7 @@ export function cargoBoundsIntersect(
     first.maxY > second.minY &&
     first.minZ < second.maxZ &&
     first.maxZ > second.minZ
-  )
+  );
 }
 
 export function isCargoPositionAvailable({
@@ -62,55 +57,42 @@ export function isCargoPositionAvailable({
   placedCargo,
   cargoTemplates,
 }: PositionValidationInput): boolean {
-  const movingCargo = placedCargo.find(
-    (cargo) => cargo.id === cargoId,
-  )
+  const movingCargo = placedCargo.find((cargo) => cargo.id === cargoId);
 
   if (!movingCargo) {
-    return false
+    return false;
   }
 
   const movingTemplate = cargoTemplates.find(
-    (template) =>
-      template.id === movingCargo.templateId,
-  )
+    (template) => template.id === movingCargo.templateId,
+  );
 
   if (!movingTemplate) {
-    return false
+    return false;
   }
 
   const candidateCargo: PlacedCargo = {
     ...movingCargo,
     position,
-  }
+  };
 
-  const candidateBounds = getCargoBounds(
-    movingTemplate,
-    candidateCargo,
-  )
+  const candidateBounds = getCargoBounds(movingTemplate, candidateCargo);
 
   return placedCargo.every((otherCargo) => {
     if (otherCargo.id === cargoId) {
-      return true
+      return true;
     }
 
     const otherTemplate = cargoTemplates.find(
-      (template) =>
-        template.id === otherCargo.templateId,
-    )
+      (template) => template.id === otherCargo.templateId,
+    );
 
     if (!otherTemplate) {
-      return true
+      return true;
     }
 
-    const otherBounds = getCargoBounds(
-      otherTemplate,
-      otherCargo,
-    )
+    const otherBounds = getCargoBounds(otherTemplate, otherCargo);
 
-    return !cargoBoundsIntersect(
-      candidateBounds,
-      otherBounds,
-    )
-  })
+    return !cargoBoundsIntersect(candidateBounds, otherBounds);
+  });
 }
