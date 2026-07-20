@@ -1,121 +1,108 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
+import { PlannerScene } from './components/scene/PlannerScene'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
+    <main className="planner">
+      <header className="planner__header">
         <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
+          <p className="planner__eyebrow">Cargo Load Planner</p>
+          <h1 className="planner__title">Новый проект</h1>
         </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
+
+        <div className="planner__header-actions">
+          <button className="button button--secondary" type="button">
+            Сохранить
+          </button>
+
+          <button className="button button--primary" type="button">
+            Экспорт PDF
+          </button>
+        </div>
+      </header>
+
+      <section className="planner__workspace">
+        <aside className="panel panel--left">
+          <div className="panel__header">
+            <div>
+              <p className="panel__eyebrow">Каталог</p>
+              <h2 className="panel__title">Грузы</h2>
+            </div>
+
+            <button
+              className="icon-button"
+              type="button"
+              aria-label="Добавить груз"
+            >
+              +
+            </button>
+          </div>
+
+          <div className="empty-state">
+            <p className="empty-state__title">Список пока пуст</p>
+            <p className="empty-state__description">
+              Здесь появятся грузы, которые можно добавить в контейнер.
+            </p>
+          </div>
+        </aside>
+
+        <section className="viewport">
+          <div className="viewport__toolbar">
+            <span className="viewport__badge">Перспектива</span>
+            <span className="viewport__hint">
+              Левая кнопка — вращение, колесо — масштаб
+            </span>
+          </div>
+
+          <div className="viewport__canvas">
+            <PlannerScene />
+          </div>
+        </section>
+
+        <aside className="panel panel--right">
+          <div className="panel__header">
+            <div>
+              <p className="panel__eyebrow">Редактор</p>
+              <h2 className="panel__title">Свойства</h2>
+            </div>
+          </div>
+
+          <div className="property-card">
+            <span className="property-card__label">Выбранный объект</span>
+            <strong className="property-card__value">Тестовый груз</strong>
+          </div>
+
+          <dl className="property-list">
+            <div className="property-list__row">
+              <dt>Длина</dt>
+              <dd>1 600 мм</dd>
+            </div>
+
+            <div className="property-list__row">
+              <dt>Ширина</dt>
+              <dd>1 200 мм</dd>
+            </div>
+
+            <div className="property-list__row">
+              <dt>Высота</dt>
+              <dd>1 000 мм</dd>
+            </div>
+
+            <div className="property-list__row">
+              <dt>Вес</dt>
+              <dd>—</dd>
+            </div>
+          </dl>
+        </aside>
       </section>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      <footer className="planner__statusbar">
+        <span>Размещено: 1 груз</span>
+        <span>Вес: 0 кг</span>
+        <span>Заполнение: 0%</span>
+        <span className="planner__status">Сцена готова</span>
+      </footer>
+    </main>
   )
 }
 
