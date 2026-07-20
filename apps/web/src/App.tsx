@@ -1,5 +1,6 @@
-import { PlannerScene } from './components/scene/PlannerScene'
-import './App.css'
+import { PlannerScene } from "./components/scene/PlannerScene";
+import "./App.css";
+import { DEFAULT_CARGO_SPACE } from "./features/planner/model/defaults";
 
 function App() {
   return (
@@ -68,29 +69,33 @@ function App() {
           </div>
 
           <div className="property-card">
-            <span className="property-card__label">Выбранный объект</span>
-            <strong className="property-card__value">Тестовый груз</strong>
+            <span className="property-card__label">Грузовое пространство</span>
+            <strong className="property-card__value">
+              {DEFAULT_CARGO_SPACE.name}
+            </strong>
           </div>
 
           <dl className="property-list">
             <div className="property-list__row">
               <dt>Длина</dt>
-              <dd>1 600 мм</dd>
+              <dd>{DEFAULT_CARGO_SPACE.lengthMm.toLocaleString("ru-RU")} мм</dd>
             </div>
 
             <div className="property-list__row">
               <dt>Ширина</dt>
-              <dd>1 200 мм</dd>
+              <dd>{DEFAULT_CARGO_SPACE.widthMm.toLocaleString("ru-RU")} мм</dd>
             </div>
 
             <div className="property-list__row">
               <dt>Высота</dt>
-              <dd>1 000 мм</dd>
+              <dd>{DEFAULT_CARGO_SPACE.heightMm.toLocaleString("ru-RU")} мм</dd>
             </div>
 
             <div className="property-list__row">
-              <dt>Вес</dt>
-              <dd>—</dd>
+              <dt>Грузоподъёмность</dt>
+              <dd>
+                {DEFAULT_CARGO_SPACE.maxWeightKg.toLocaleString("ru-RU")} кг
+              </dd>
             </div>
           </dl>
         </aside>
@@ -103,7 +108,7 @@ function App() {
         <span className="planner__status">Сцена готова</span>
       </footer>
     </main>
-  )
+  );
 }
 
-export default App
+export default App;

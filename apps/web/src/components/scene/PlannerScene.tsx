@@ -5,6 +5,8 @@ import {
   Grid,
   OrbitControls,
 } from '@react-three/drei'
+import { DEFAULT_CARGO_SPACE } from '../../features/planner/model/defaults'
+import { CargoSpace } from './CargoSpace'
 
 function TestCargo() {
   return (
@@ -25,7 +27,7 @@ export function PlannerScene() {
     <Canvas
       shadows
       camera={{
-        position: [8, 6, 8],
+        position: [11, 8, 11],
         fov: 45,
         near: 0.1,
         far: 200,
@@ -37,7 +39,7 @@ export function PlannerScene() {
 
       <directionalLight
         castShadow
-        position={[6, 10, 8]}
+        position={[6, 12, 8]}
         intensity={2}
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
@@ -45,19 +47,19 @@ export function PlannerScene() {
 
       <Grid
         args={[30, 30]}
-        position={[0, 0, 0]}
+        position={[0, -0.081, 0]}
         cellSize={0.5}
         cellThickness={0.6}
         cellColor="#374151"
         sectionSize={2}
         sectionThickness={1.2}
         sectionColor="#6b7280"
-        fadeDistance={30}
+        fadeDistance={35}
         fadeStrength={1}
         infiniteGrid
       />
 
-      <axesHelper args={[3]} />
+      <CargoSpace cargoSpace={DEFAULT_CARGO_SPACE} />
 
       <TestCargo />
 
@@ -65,10 +67,10 @@ export function PlannerScene() {
         makeDefault
         enableDamping
         dampingFactor={0.08}
-        minDistance={3}
-        maxDistance={35}
+        minDistance={4}
+        maxDistance={45}
         maxPolarAngle={Math.PI / 2.05}
-        target={[0, 0.5, 0]}
+        target={[0, 1, 0]}
       />
 
       <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
