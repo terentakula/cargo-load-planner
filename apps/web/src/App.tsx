@@ -122,6 +122,10 @@ function App() {
             <span className="viewport__hint">
               Зажмите груз левой кнопкой и перемещайте по полу
             </span>
+
+            <span className="viewport__hint">
+              Красный груз означает пересечение
+            </span>
           </div>
 
           <div className="viewport__canvas">

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { Canvas } from '@react-three/fiber'
 import {
   GizmoHelper,
@@ -9,6 +9,8 @@ import {
 import { usePlannerStore } from '../../features/planner/store/usePlannerStore'
 import { CargoMesh } from './CargoMesh'
 import { CargoSpace } from './CargoSpace'
+import { isCargoPositionAvailable } from '../../features/planner/lib/collision'
+import type { CargoPosition } from '../../features/planner/model/types'
 
 export function PlannerScene() {
   const [draggingCargoId, setDraggingCargoId] =
@@ -37,6 +39,21 @@ export function PlannerScene() {
   const moveCargo = usePlannerStore(
     (state) => state.moveCargo,
   )
+
+  const validateCargoPosition = useCallback(
+  (
+    cargoId: string,
+    position: CargoPosition,
+  ) => {
+    return isCargoPositionAvailable({
+      cargoId,
+      position,
+      placedCargo,
+      cargoTemplates,
+    })
+  },
+  [cargoTemplates, placedCargo],
+)
 
   return (
     <Canvas
@@ -99,8 +116,11 @@ export function PlannerScene() {
             selected={cargo.id === selectedCargoId}
             onSelect={selectCargo}
             onMove={moveCargo}
-            onDragStart={setDraggingCargoId}
+            onDragStart={(cargoId) => {
+              setDraggingCargoId(cargoId)
+            }}
             onDragEnd={() => setDraggingCargoId(null)}
+            isPositionValid={validateCargoPosition}
           />
         )
       })}
