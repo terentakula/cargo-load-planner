@@ -1,69 +1,49 @@
-import { PlannerScene } from './components/scene/PlannerScene'
-import { usePlannerStore } from './features/planner/store/usePlannerStore'
-import './App.css'
+import { PlannerScene } from "./components/scene/PlannerScene";
+import { usePlannerStore } from "./features/planner/store/usePlannerStore";
+import "./App.css";
 
 function App() {
-  const cargoTemplates = usePlannerStore(
-    (state) => state.cargoTemplates,
-  )
+  const cargoTemplates = usePlannerStore((state) => state.cargoTemplates);
 
-  const placedCargo = usePlannerStore(
-    (state) => state.placedCargo,
-  )
+  const placedCargo = usePlannerStore((state) => state.placedCargo);
 
-  const selectedCargoId = usePlannerStore(
-    (state) => state.selectedCargoId,
-  )
+  const selectedCargoId = usePlannerStore((state) => state.selectedCargoId);
 
-  const selectCargo = usePlannerStore(
-    (state) => state.selectCargo,
-  )
+  const selectCargo = usePlannerStore((state) => state.selectCargo);
 
   const selectedCargo = placedCargo.find(
     (cargo) => cargo.id === selectedCargoId,
-  )
+  );
 
   const selectedTemplate = selectedCargo
     ? cargoTemplates.find(
-        (template) =>
-          template.id === selectedCargo.templateId,
+        (template) => template.id === selectedCargo.templateId,
       )
-    : null
+    : null;
 
-  const totalWeightKg = placedCargo.reduce(
-    (totalWeight, cargo) => {
-      const cargoTemplate = cargoTemplates.find(
-        (template) => template.id === cargo.templateId,
-      )
+  const totalWeightKg = placedCargo.reduce((totalWeight, cargo) => {
+    const cargoTemplate = cargoTemplates.find(
+      (template) => template.id === cargo.templateId,
+    );
 
-      return totalWeight + (cargoTemplate?.weightKg ?? 0)
-    },
-    0,
-  )
+    return totalWeight + (cargoTemplate?.weightKg ?? 0);
+  }, 0);
 
   return (
     <main className="planner">
       <header className="planner__header">
         <div>
-          <p className="planner__eyebrow">
-            Cargo Load Planner
-          </p>
+          <p className="planner__eyebrow">Cargo Load Planner</p>
 
           <h1 className="planner__title">Новый проект</h1>
         </div>
 
         <div className="planner__header-actions">
-          <button
-            className="button button--secondary"
-            type="button"
-          >
+          <button className="button button--secondary" type="button">
             Сохранить
           </button>
 
-          <button
-            className="button button--primary"
-            type="button"
-          >
+          <button className="button button--primary" type="button">
             Экспорт PDF
           </button>
         </div>
@@ -89,23 +69,20 @@ function App() {
           <div className="cargo-list">
             {placedCargo.map((cargo, index) => {
               const cargoTemplate = cargoTemplates.find(
-                (template) =>
-                  template.id === cargo.templateId,
-              )
+                (template) => template.id === cargo.templateId,
+              );
 
               if (!cargoTemplate) {
-                return null
+                return null;
               }
 
-              const selected = cargo.id === selectedCargoId
+              const selected = cargo.id === selectedCargoId;
 
               return (
                 <button
                   key={cargo.id}
                   className={`cargo-list__item${
-                    selected
-                      ? ' cargo-list__item--selected'
-                      : ''
+                    selected ? " cargo-list__item--selected" : ""
                   }`}
                   type="button"
                   onClick={() => selectCargo(cargo.id)}
@@ -123,41 +100,27 @@ function App() {
                     </strong>
 
                     <span className="cargo-list__meta">
-                      {cargoTemplate.lengthMm.toLocaleString(
-                        'ru-RU',
-                      )}{' '}
-                      ×{' '}
-                      {cargoTemplate.widthMm.toLocaleString(
-                        'ru-RU',
-                      )}{' '}
-                      ×{' '}
-                      {cargoTemplate.heightMm.toLocaleString(
-                        'ru-RU',
-                      )}{' '}
-                      мм
+                      {cargoTemplate.lengthMm.toLocaleString("ru-RU")} ×{" "}
+                      {cargoTemplate.widthMm.toLocaleString("ru-RU")} ×{" "}
+                      {cargoTemplate.heightMm.toLocaleString("ru-RU")} мм
                     </span>
 
                     <span className="cargo-list__meta">
-                      {cargoTemplate.weightKg.toLocaleString(
-                        'ru-RU',
-                      )}{' '}
-                      кг
+                      {cargoTemplate.weightKg.toLocaleString("ru-RU")} кг
                     </span>
                   </span>
                 </button>
-              )
+              );
             })}
           </div>
         </aside>
 
         <section className="viewport">
           <div className="viewport__toolbar">
-            <span className="viewport__badge">
-              Перспектива
-            </span>
+            <span className="viewport__badge">Перспектива</span>
 
             <span className="viewport__hint">
-              Нажмите на груз, чтобы выбрать его
+              Зажмите груз левой кнопкой и перемещайте по полу
             </span>
           </div>
 
@@ -177,9 +140,7 @@ function App() {
           {selectedCargo && selectedTemplate ? (
             <>
               <div className="property-card">
-                <span className="property-card__label">
-                  Выбранный груз
-                </span>
+                <span className="property-card__label">Выбранный груз</span>
 
                 <strong className="property-card__value">
                   {selectedTemplate.name}
@@ -194,40 +155,26 @@ function App() {
                 <div className="property-list__row">
                   <dt>Длина</dt>
                   <dd>
-                    {selectedTemplate.lengthMm.toLocaleString(
-                      'ru-RU',
-                    )}{' '}
-                    мм
+                    {selectedTemplate.lengthMm.toLocaleString("ru-RU")} мм
                   </dd>
                 </div>
 
                 <div className="property-list__row">
                   <dt>Ширина</dt>
-                  <dd>
-                    {selectedTemplate.widthMm.toLocaleString(
-                      'ru-RU',
-                    )}{' '}
-                    мм
-                  </dd>
+                  <dd>{selectedTemplate.widthMm.toLocaleString("ru-RU")} мм</dd>
                 </div>
 
                 <div className="property-list__row">
                   <dt>Высота</dt>
                   <dd>
-                    {selectedTemplate.heightMm.toLocaleString(
-                      'ru-RU',
-                    )}{' '}
-                    мм
+                    {selectedTemplate.heightMm.toLocaleString("ru-RU")} мм
                   </dd>
                 </div>
 
                 <div className="property-list__row">
                   <dt>Вес</dt>
                   <dd>
-                    {selectedTemplate.weightKg.toLocaleString(
-                      'ru-RU',
-                    )}{' '}
-                    кг
+                    {selectedTemplate.weightKg.toLocaleString("ru-RU")} кг
                   </dd>
                 </div>
 
@@ -237,33 +184,47 @@ function App() {
                 </div>
 
                 <div className="property-list__row">
+                  <dt>Позиция X</dt>
+                  <dd>
+                    {selectedCargo.position.xMm.toLocaleString("ru-RU")} мм
+                  </dd>
+                </div>
+
+                <div className="property-list__row">
+                  <dt>Позиция Y</dt>
+                  <dd>
+                    {selectedCargo.position.yMm.toLocaleString("ru-RU")} мм
+                  </dd>
+                </div>
+
+                <div className="property-list__row">
+                  <dt>Позиция Z</dt>
+                  <dd>
+                    {selectedCargo.position.zMm.toLocaleString("ru-RU")} мм
+                  </dd>
+                </div>
+
+                <div className="property-list__row">
                   <dt>Штабелирование</dt>
                   <dd>
-                    {selectedTemplate.stackable
-                      ? 'Разрешено'
-                      : 'Запрещено'}
+                    {selectedTemplate.stackable ? "Разрешено" : "Запрещено"}
                   </dd>
                 </div>
 
                 <div className="property-list__row">
                   <dt>Кантование</dt>
                   <dd>
-                    {selectedTemplate.canBeTilted
-                      ? 'Разрешено'
-                      : 'Запрещено'}
+                    {selectedTemplate.canBeTilted ? "Разрешено" : "Запрещено"}
                   </dd>
                 </div>
               </dl>
             </>
           ) : (
             <div className="empty-state">
-              <p className="empty-state__title">
-                Груз не выбран
-              </p>
+              <p className="empty-state__title">Груз не выбран</p>
 
               <p className="empty-state__description">
-                Выберите коробку в списке или нажмите на неё
-                в 3D-сцене.
+                Выберите коробку в списке или нажмите на неё в 3D-сцене.
               </p>
             </div>
           )}
@@ -273,18 +234,14 @@ function App() {
       <footer className="planner__statusbar">
         <span>Размещено: {placedCargo.length}</span>
 
-        <span>
-          Вес: {totalWeightKg.toLocaleString('ru-RU')} кг
-        </span>
+        <span>Вес: {totalWeightKg.toLocaleString("ru-RU")} кг</span>
 
         <span>Заполнение: пока не рассчитано</span>
 
-        <span className="planner__status">
-          Сцена готова
-        </span>
+        <span className="planner__status">Сцена готова</span>
       </footer>
     </main>
-  )
+  );
 }
 
-export default App
+export default App;

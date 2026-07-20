@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import {
   GizmoHelper,
@@ -10,6 +11,9 @@ import { CargoMesh } from './CargoMesh'
 import { CargoSpace } from './CargoSpace'
 
 export function PlannerScene() {
+  const [draggingCargoId, setDraggingCargoId] =
+    useState<string | null>(null)
+
   const cargoSpace = usePlannerStore(
     (state) => state.cargoSpace,
   )
@@ -30,6 +34,10 @@ export function PlannerScene() {
     (state) => state.selectCargo,
   )
 
+  const moveCargo = usePlannerStore(
+    (state) => state.moveCargo,
+  )
+
   return (
     <Canvas
       shadows
@@ -39,7 +47,11 @@ export function PlannerScene() {
         near: 0.1,
         far: 200,
       }}
-      onPointerMissed={() => selectCargo(null)}
+      onPointerMissed={() => {
+        if (draggingCargoId === null) {
+          selectCargo(null)
+        }
+      }}
     >
       <color attach="background" args={['#111827']} />
 
@@ -86,12 +98,16 @@ export function PlannerScene() {
             placedCargo={cargo}
             selected={cargo.id === selectedCargoId}
             onSelect={selectCargo}
+            onMove={moveCargo}
+            onDragStart={setDraggingCargoId}
+            onDragEnd={() => setDraggingCargoId(null)}
           />
         )
       })}
 
       <OrbitControls
         makeDefault
+        enabled={draggingCargoId === null}
         enableDamping
         dampingFactor={0.08}
         minDistance={4}
@@ -100,9 +116,16 @@ export function PlannerScene() {
         target={[0, 1, 0]}
       />
 
-      <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
+      <GizmoHelper
+        alignment="bottom-right"
+        margin={[80, 80]}
+      >
         <GizmoViewport
-          axisColors={['#ef4444', '#22c55e', '#3b82f6']}
+          axisColors={[
+            '#ef4444',
+            '#22c55e',
+            '#3b82f6',
+          ]}
           labelColor="#111827"
         />
       </GizmoHelper>

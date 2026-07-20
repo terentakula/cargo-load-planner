@@ -5,6 +5,7 @@ import {
   DEFAULT_PLACED_CARGO,
 } from '../model/defaults'
 import type {
+  CargoPosition,
   CargoSpace,
   CargoTemplate,
   PlacedCargo,
@@ -17,6 +18,10 @@ type PlannerState = {
   selectedCargoId: string | null
 
   selectCargo: (cargoId: string | null) => void
+  moveCargo: (
+    cargoId: string,
+    position: CargoPosition,
+  ) => void
 }
 
 export const usePlannerStore = create<PlannerState>((set) => ({
@@ -29,5 +34,18 @@ export const usePlannerStore = create<PlannerState>((set) => ({
     set({
       selectedCargoId: cargoId,
     })
+  },
+
+  moveCargo: (cargoId, position) => {
+    set((state) => ({
+      placedCargo: state.placedCargo.map((cargo) =>
+        cargo.id === cargoId
+          ? {
+              ...cargo,
+              position,
+            }
+          : cargo,
+      ),
+    }))
   },
 }))
