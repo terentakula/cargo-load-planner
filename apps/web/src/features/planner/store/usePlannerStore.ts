@@ -28,6 +28,7 @@ type PlannerState = {
     position: CargoPosition,
   ) => void;
   removeCargo: (cargoId: string) => void;
+  addCargo: (cargoTemplate: CargoTemplate, placedCargo: PlacedCargo) => void;
 };
 
 export const usePlannerStore = create<PlannerState>((set) => ({
@@ -118,5 +119,12 @@ export const usePlannerStore = create<PlannerState>((set) => ({
         selectedCargoId: nextSelectedCargoId,
       };
     });
+  },
+  addCargo: (cargoTemplate, placedCargo) => {
+    set((state) => ({
+      cargoTemplates: [...state.cargoTemplates, cargoTemplate],
+      placedCargo: [...state.placedCargo, placedCargo],
+      selectedCargoId: placedCargo.id,
+    }));
   },
 }));

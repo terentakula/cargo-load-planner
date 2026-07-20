@@ -9,8 +9,19 @@ import {
 import { getCargoTopLoadKg } from "./features/planner/lib/load";
 import { findAvailableFloorPosition } from "./features/planner/lib/placement";
 import { isCargoSupportingAnotherCargo } from "./features/planner/lib/support";
+import { useState } from "react";
+import { CargoCreateForm } from "./features/planner/components/CargoCreateForm";
+import type { CargoFormValues } from "./features/planner/model/cargoForm";
+import type {
+  CargoTemplate,
+  PlacedCargo,
+} from "./features/planner/model/types";
 
 function App() {
+  const [isCargoFormOpen, setIsCargoFormOpen] = useState(false);
+
+  const addCargo = usePlannerStore((state) => state.addCargo);
+
   const cargoTemplates = usePlannerStore((state) => state.cargoTemplates);
 
   const cargoSpace = usePlannerStore((state) => state.cargoSpace);
@@ -159,6 +170,110 @@ function App() {
     removeCargo(selectedCargo.id);
   };
 
+  const handleCreateCargo = (values: CargoFormValues) => {
+    const name = values.name.trim();
+    const sku = values.sku.trim();
+
+    const lengthMm = Number(values.lengthMm);
+    const widthMm = Number(values.widthMm);
+    const heightMm = Number(values.heightMm);
+    const weightKg = Number(values.weightKg);
+
+    const numericValues = [lengthMm, widthMm, heightMm, weightKg];
+
+    if (
+      !name ||
+      !sku ||
+      numericValues.some((value) => !Number.isFinite(value) || value <= 0)
+    ) {
+      window.alert(
+        "Заполните название, артикул, размеры и вес положительными значениями.",
+      );
+
+      return;
+    }
+
+    if (!/^#[0-9A-Fa-f]{6}$/.test(values.color)) {
+      window.alert("Цвет должен быть указан в формате #RRGGBB.");
+
+      return;
+    }
+
+    const maxTopLoadKg =
+      values.stackable && values.maxTopLoadKg !== ""
+        ? Number(values.maxTopLoadKg)
+        : null;
+
+    if (
+      maxTopLoadKg !== null &&
+      (!Number.isFinite(maxTopLoadKg) || maxTopLoadKg < 0)
+    ) {
+      window.alert("Максимальная нагрузка сверху не может быть отрицательной.");
+
+      return;
+    }
+
+    if (totalWeightKg + weightKg > cargoSpace.maxWeightKg) {
+      window.alert(
+        "Нельзя добавить груз: будет превышена грузоподъёмность кузова.",
+      );
+
+      return;
+    }
+
+    const templateId = `template-${crypto.randomUUID()}`;
+
+    const cargoId = `cargo-${crypto.randomUUID()}`;
+
+    const cargoTemplate: CargoTemplate = {
+      id: templateId,
+      sku,
+      name,
+      lengthMm,
+      widthMm,
+      heightMm,
+      weightKg,
+      color: values.color,
+      canBeTilted: values.canBeTilted,
+      stackable: values.stackable,
+      maxTopLoadKg,
+    };
+
+    const candidateCargo: PlacedCargo = {
+      id: cargoId,
+      templateId,
+      position: {
+        xMm: 0,
+        yMm: 0,
+        zMm: 0,
+      },
+      orientation: "XYZ",
+      locked: false,
+    };
+
+    const availablePosition = findAvailableFloorPosition({
+      candidateCargo,
+      cargoSpace,
+      placedCargo,
+      cargoTemplates: [...cargoTemplates, cargoTemplate],
+    });
+
+    if (!availablePosition) {
+      window.alert(
+        "Груз не помещается в кузове или на полу нет подходящего свободного места.",
+      );
+
+      return;
+    }
+
+    addCargo(cargoTemplate, {
+      ...candidateCargo,
+      position: availablePosition,
+    });
+
+    setIsCargoFormOpen(false);
+  };
+
   const canRotateX = canRotateSelectedCargo("x");
   const canRotateY = canRotateSelectedCargo("y");
   const canRotateZ = canRotateSelectedCargo("z");
@@ -209,6 +324,25 @@ function App() {
           </div>
 
           <div className="cargo-list">
+            <button
+              className="rotation-button cargo-create-trigger"
+              type="button"
+              aria-expanded={isCargoFormOpen}
+              onClick={() => {
+                setIsCargoFormOpen((currentValue) => !currentValue);
+              }}
+            >
+              {isCargoFormOpen ? "Скрыть форму" : "Добавить груз"}
+            </button>
+
+            {isCargoFormOpen && (
+              <CargoCreateForm
+                onCancel={() => {
+                  setIsCargoFormOpen(false);
+                }}
+                onSubmit={handleCreateCargo}
+              />
+            )}
             {placedCargo.map((cargo, index) => {
               const cargoTemplate = cargoTemplates.find(
                 (template) => template.id === cargo.templateId,
