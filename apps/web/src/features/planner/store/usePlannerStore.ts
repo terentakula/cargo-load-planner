@@ -22,6 +22,11 @@ type PlannerState = {
   moveCargo: (cargoId: string, position: CargoPosition) => void;
   rotateCargo: (cargoId: string, orientation: CargoOrientation) => void;
   toggleCargoLock: (cargoId: string) => void;
+  duplicateCargo: (
+  sourceCargoId: string,
+  duplicateCargoId: string,
+  position: CargoPosition,
+) => void
 };
 
 export const usePlannerStore = create<PlannerState>((set) => ({
@@ -72,4 +77,32 @@ export const usePlannerStore = create<PlannerState>((set) => ({
       ),
     }));
   },
+  duplicateCargo: (
+  sourceCargoId,
+  duplicateCargoId,
+  position,
+) => {
+  set((state) => {
+    const sourceCargo = state.placedCargo.find(
+      (cargo) => cargo.id === sourceCargoId,
+    )
+
+    if (!sourceCargo) {
+      return state
+    }
+
+    return {
+      placedCargo: [
+        ...state.placedCargo,
+        {
+          ...sourceCargo,
+          id: duplicateCargoId,
+          position,
+          locked: false,
+        },
+      ],
+      selectedCargoId: duplicateCargoId,
+    }
+  })
+},
 }));

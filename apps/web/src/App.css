@@ -386,6 +386,8 @@
 }
 
 .cargo-actions {
+  display: grid;
+  gap: var(--space-xs);
   margin-top: var(--space-md);
 }
 

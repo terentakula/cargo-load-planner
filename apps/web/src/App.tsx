@@ -7,6 +7,7 @@ import {
   type CargoRotationAxis,
 } from "./features/planner/lib/orientation";
 import { getCargoTopLoadKg } from "./features/planner/lib/load";
+import { findAvailableFloorPosition } from "./features/planner/lib/placement";
 
 function App() {
   const cargoTemplates = usePlannerStore((state) => state.cargoTemplates);
@@ -22,6 +23,8 @@ function App() {
   const rotateCargo = usePlannerStore((state) => state.rotateCargo);
 
   const toggleCargoLock = usePlannerStore((state) => state.toggleCargoLock);
+
+  const duplicateCargo = usePlannerStore((state) => state.duplicateCargo);
 
   const selectedCargo = placedCargo.find(
     (cargo) => cargo.id === selectedCargoId,
@@ -84,6 +87,49 @@ function App() {
     );
 
     rotateCargo(selectedCargo.id, nextOrientation);
+  };
+
+  const handleDuplicateCargo = () => {
+    if (!selectedCargo || !selectedTemplate) {
+      return;
+    }
+
+    const nextTotalWeightKg = totalWeightKg + selectedTemplate.weightKg;
+
+    if (nextTotalWeightKg > cargoSpace.maxWeightKg) {
+      window.alert(
+        "Нельзя создать копию: будет превышена грузоподъёмность кузова.",
+      );
+
+      return;
+    }
+
+    const duplicateCargoId = `cargo-${crypto.randomUUID()}`;
+
+    const candidateCargo = {
+      ...selectedCargo,
+      id: duplicateCargoId,
+      position: {
+        ...selectedCargo.position,
+        yMm: 0,
+      },
+      locked: false,
+    };
+
+    const availablePosition = findAvailableFloorPosition({
+      candidateCargo,
+      cargoSpace,
+      placedCargo,
+      cargoTemplates,
+    });
+
+    if (!availablePosition) {
+      window.alert("Для копии не найдено свободное место на полу кузова.");
+
+      return;
+    }
+
+    duplicateCargo(selectedCargo.id, duplicateCargoId, availablePosition);
   };
 
   const canRotateX = canRotateSelectedCargo("x");
@@ -376,6 +422,13 @@ function App() {
               </div>
 
               <div className="cargo-actions">
+                <button
+                  className="rotation-button cargo-action-button"
+                  type="button"
+                  onClick={handleDuplicateCargo}
+                >
+                  Дублировать груз
+                </button>
                 <button
                   className="rotation-button cargo-action-button"
                   type="button"
