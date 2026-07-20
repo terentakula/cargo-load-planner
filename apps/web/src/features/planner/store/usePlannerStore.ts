@@ -1,33 +1,28 @@
-import { create } from 'zustand'
+import { create } from "zustand";
 import {
   DEFAULT_CARGO_SPACE,
   DEFAULT_CARGO_TEMPLATES,
   DEFAULT_PLACED_CARGO,
-} from '../model/defaults'
+} from "../model/defaults";
 import type {
   CargoPosition,
   CargoSpace,
   CargoTemplate,
   PlacedCargo,
   CargoOrientation,
-} from '../model/types'
+} from "../model/types";
 
 type PlannerState = {
-  cargoSpace: CargoSpace
-  cargoTemplates: CargoTemplate[]
-  placedCargo: PlacedCargo[]
-  selectedCargoId: string | null
+  cargoSpace: CargoSpace;
+  cargoTemplates: CargoTemplate[];
+  placedCargo: PlacedCargo[];
+  selectedCargoId: string | null;
 
-  selectCargo: (cargoId: string | null) => void
-  moveCargo: (
-    cargoId: string,
-    position: CargoPosition,
-  ) => void
-  rotateCargo: (
-  cargoId: string,
-  orientation: CargoOrientation,
-) => void
-}
+  selectCargo: (cargoId: string | null) => void;
+  moveCargo: (cargoId: string, position: CargoPosition) => void;
+  rotateCargo: (cargoId: string, orientation: CargoOrientation) => void;
+  toggleCargoLock: (cargoId: string) => void;
+};
 
 export const usePlannerStore = create<PlannerState>((set) => ({
   cargoSpace: DEFAULT_CARGO_SPACE,
@@ -38,7 +33,7 @@ export const usePlannerStore = create<PlannerState>((set) => ({
   selectCargo: (cargoId) => {
     set({
       selectedCargoId: cargoId,
-    })
+    });
   },
 
   moveCargo: (cargoId, position) => {
@@ -51,18 +46,30 @@ export const usePlannerStore = create<PlannerState>((set) => ({
             }
           : cargo,
       ),
-    }))
+    }));
   },
   rotateCargo: (cargoId, orientation) => {
-  set((state) => ({
-    placedCargo: state.placedCargo.map((cargo) =>
-      cargo.id === cargoId
-        ? {
-            ...cargo,
-            orientation,
-          }
-        : cargo,
-    ),
-  }))
-},
-}))
+    set((state) => ({
+      placedCargo: state.placedCargo.map((cargo) =>
+        cargo.id === cargoId
+          ? {
+              ...cargo,
+              orientation,
+            }
+          : cargo,
+      ),
+    }));
+  },
+  toggleCargoLock: (cargoId) => {
+    set((state) => ({
+      placedCargo: state.placedCargo.map((cargo) =>
+        cargo.id === cargoId
+          ? {
+              ...cargo,
+              locked: !cargo.locked,
+            }
+          : cargo,
+      ),
+    }));
+  },
+}));

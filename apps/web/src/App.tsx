@@ -21,6 +21,8 @@ function App() {
 
   const rotateCargo = usePlannerStore((state) => state.rotateCargo);
 
+  const toggleCargoLock = usePlannerStore((state) => state.toggleCargoLock);
+
   const selectedCargo = placedCargo.find(
     (cargo) => cargo.id === selectedCargoId,
   );
@@ -46,7 +48,7 @@ function App() {
       : Math.max(0, selectedTemplate.maxTopLoadKg - selectedCargoTopLoadKg);
 
   const canRotateSelectedCargo = (axis: CargoRotationAxis): boolean => {
-    if (!selectedCargo || !selectedTemplate) {
+    if (!selectedCargo || !selectedTemplate || selectedCargo.locked) {
       return false;
     }
 
@@ -283,6 +285,11 @@ function App() {
                 </div>
 
                 <div className="property-list__row">
+                  <dt>Позиция зафиксирована</dt>
+                  <dd>{selectedCargo.locked ? "Да" : "Нет"}</dd>
+                </div>
+
+                <div className="property-list__row">
                   <dt>Штабелирование</dt>
                   <dd>
                     {selectedTemplate.stackable ? "Разрешено" : "Запрещено"}
@@ -366,6 +373,20 @@ function App() {
                     По Z
                   </button>
                 </div>
+              </div>
+
+              <div className="cargo-actions">
+                <button
+                  className="rotation-button cargo-action-button"
+                  type="button"
+                  onClick={() => {
+                    toggleCargoLock(selectedCargo.id);
+                  }}
+                >
+                  {selectedCargo.locked
+                    ? "Разблокировать груз"
+                    : "Заблокировать груз"}
+                </button>
               </div>
             </>
           ) : (
