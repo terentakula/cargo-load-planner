@@ -5,24 +5,31 @@ import {
   Grid,
   OrbitControls,
 } from '@react-three/drei'
-import { DEFAULT_CARGO_SPACE } from '../../features/planner/model/defaults'
+import { usePlannerStore } from '../../features/planner/store/usePlannerStore'
+import { CargoMesh } from './CargoMesh'
 import { CargoSpace } from './CargoSpace'
 
-function TestCargo() {
-  return (
-    <mesh position={[0, 0.5, 0]} castShadow receiveShadow>
-      <boxGeometry args={[1.6, 1, 1.2]} />
-
-      <meshStandardMaterial
-        color="#f59e0b"
-        roughness={0.65}
-        metalness={0.05}
-      />
-    </mesh>
-  )
-}
-
 export function PlannerScene() {
+  const cargoSpace = usePlannerStore(
+    (state) => state.cargoSpace,
+  )
+
+  const cargoTemplates = usePlannerStore(
+    (state) => state.cargoTemplates,
+  )
+
+  const placedCargo = usePlannerStore(
+    (state) => state.placedCargo,
+  )
+
+  const selectedCargoId = usePlannerStore(
+    (state) => state.selectedCargoId,
+  )
+
+  const selectCargo = usePlannerStore(
+    (state) => state.selectCargo,
+  )
+
   return (
     <Canvas
       shadows
@@ -32,6 +39,7 @@ export function PlannerScene() {
         near: 0.1,
         far: 200,
       }}
+      onPointerMissed={() => selectCargo(null)}
     >
       <color attach="background" args={['#111827']} />
 
@@ -59,9 +67,28 @@ export function PlannerScene() {
         infiniteGrid
       />
 
-      <CargoSpace cargoSpace={DEFAULT_CARGO_SPACE} />
+      <CargoSpace cargoSpace={cargoSpace} />
 
-      <TestCargo />
+      {placedCargo.map((cargo) => {
+        const cargoTemplate = cargoTemplates.find(
+          (template) => template.id === cargo.templateId,
+        )
+
+        if (!cargoTemplate) {
+          return null
+        }
+
+        return (
+          <CargoMesh
+            key={cargo.id}
+            cargoSpace={cargoSpace}
+            cargoTemplate={cargoTemplate}
+            placedCargo={cargo}
+            selected={cargo.id === selectedCargoId}
+            onSelect={selectCargo}
+          />
+        )
+      })}
 
       <OrbitControls
         makeDefault
