@@ -11,6 +11,7 @@ import { CargoMesh } from './CargoMesh'
 import { CargoSpace } from './CargoSpace'
 import { isCargoPositionAvailable } from '../../features/planner/lib/collision'
 import type { CargoPosition } from '../../features/planner/model/types'
+import { getSnappedCargoPosition } from '../../features/planner/lib/snapping'
 
 export function PlannerScene() {
   const [draggingCargoId, setDraggingCargoId] =
@@ -53,6 +54,26 @@ export function PlannerScene() {
     })
   },
   [cargoTemplates, placedCargo],
+)
+
+const snapCargoPosition = useCallback(
+  (
+    cargoId: string,
+    position: CargoPosition,
+  ): CargoPosition => {
+    return getSnappedCargoPosition({
+      cargoId,
+      position,
+      cargoSpace,
+      placedCargo,
+      cargoTemplates,
+    })
+  },
+  [
+    cargoSpace,
+    cargoTemplates,
+    placedCargo,
+  ],
 )
 
   return (
@@ -121,6 +142,7 @@ export function PlannerScene() {
             }}
             onDragEnd={() => setDraggingCargoId(null)}
             isPositionValid={validateCargoPosition}
+            getSnappedPosition={snapCargoPosition}
           />
         )
       })}

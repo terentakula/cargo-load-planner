@@ -30,6 +30,10 @@ type Props = {
     cargoId: string,
     position: CargoPosition,
   ) => boolean
+  getSnappedPosition: (
+  cargoId: string,
+  position: CargoPosition,
+) => CargoPosition
 }
 
 type PointerCaptureTarget = EventTarget & {
@@ -68,6 +72,7 @@ export function CargoMesh({
   onDragStart,
   onDragEnd,
   isPositionValid,
+  getSnappedPosition,
 }: Props) {
   const [previewPosition, setPreviewPosition] =
     useState<CargoPosition | null>(null)
@@ -224,18 +229,34 @@ export function CargoMesh({
       return
     }
 
-    const nextPosition =
-      getClampedCargoPositionFromSceneCenter(
-        cargoSpace,
-        cargoTemplate,
-        intersection.x + dragOffset.current.x,
-        intersection.z + dragOffset.current.z,
-      )
+    const rawPosition =
+  getClampedCargoPositionFromSceneCenter(
+    cargoSpace,
+    cargoTemplate,
+    intersection.x + dragOffset.current.x,
+    intersection.z + dragOffset.current.z,
+  )
 
-    const valid = isPositionValid(
-      placedCargo.id,
-      nextPosition,
-    )
+const snappedPosition = getSnappedPosition(
+  placedCargo.id,
+  rawPosition,
+)
+
+const snappedPositionValid = isPositionValid(
+  placedCargo.id,
+  snappedPosition,
+)
+
+const nextPosition = snappedPositionValid
+  ? snappedPosition
+  : rawPosition
+
+const valid =
+  snappedPositionValid ||
+  isPositionValid(
+    placedCargo.id,
+    rawPosition,
+  )
 
     previewPositionRef.current = nextPosition
     previewValidRef.current = valid
