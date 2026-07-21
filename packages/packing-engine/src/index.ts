@@ -46,4 +46,12 @@ export type {
   SnapCargoPositionInput,
 } from './snapping'
 
+export {
+  findAvailableFloorPosition,
+} from './placement'
+
+export type {
+  FindAvailableFloorPositionInput,
+} from './placement'
+
 export const PACKING_ENGINE_VERSION = '0.1.0'
