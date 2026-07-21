@@ -17,4 +17,9 @@ export type {
   OrientedCargoSize,
 } from './orientation'
 
+export {
+  getCargoTopLoadKg,
+  isCargoStackValid,
+} from './load'
+
 export const PACKING_ENGINE_VERSION = '0.1.0'
