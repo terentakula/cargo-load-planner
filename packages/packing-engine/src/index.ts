@@ -38,4 +38,12 @@ export {
   isCargoSupportingAnotherCargo,
 } from './support'
 
+export {
+  getSnappedCargoPosition,
+} from './snapping'
+
+export type {
+  SnapCargoPositionInput,
+} from './snapping'
+
 export const PACKING_ENGINE_VERSION = '0.1.0'
