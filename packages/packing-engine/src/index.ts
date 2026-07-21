@@ -33,4 +33,9 @@ export type {
   PositionValidationInput,
 } from './collision'
 
+export {
+  getSupportedCargoPosition,
+  isCargoSupportingAnotherCargo,
+} from './support'
+
 export const PACKING_ENGINE_VERSION = '0.1.0'
