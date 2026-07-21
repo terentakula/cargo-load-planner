@@ -22,4 +22,15 @@ export {
   isCargoStackValid,
 } from './load'
 
+export {
+  cargoBoundsIntersect,
+  getCargoBounds,
+  isCargoPositionAvailable,
+} from './collision'
+
+export type {
+  CargoBounds,
+  PositionValidationInput,
+} from './collision'
+
 export const PACKING_ENGINE_VERSION = '0.1.0'
