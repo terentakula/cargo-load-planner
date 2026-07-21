@@ -412,9 +412,26 @@
   line-height: 1.45;
 }
 
-.cargo-create-trigger {
-  width: 100%;
+.cargo-toolbar {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-xs);
   margin-bottom: var(--space-md);
+}
+
+.cargo-create-trigger,
+.cargo-reset-button {
+  width: 100%;
+}
+
+.cargo-reset-button {
+  border-color: rgba(239, 68, 68, 0.45);
+  color: #fca5a5;
+}
+
+.cargo-reset-button:hover:not(:disabled) {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
 }
 
 .cargo-create-form {

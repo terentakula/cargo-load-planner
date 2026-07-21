@@ -11,6 +11,7 @@ import type {
   PlacedCargo,
   CargoOrientation,
 } from "../model/types";
+import { persist } from "zustand/middleware";
 
 type PlannerState = {
   cargoSpace: CargoSpace;
@@ -29,102 +30,128 @@ type PlannerState = {
   ) => void;
   removeCargo: (cargoId: string) => void;
   addCargo: (cargoTemplate: CargoTemplate, placedCargo: PlacedCargo) => void;
+  resetProject: () => void;
 };
 
-export const usePlannerStore = create<PlannerState>((set) => ({
-  cargoSpace: DEFAULT_CARGO_SPACE,
-  cargoTemplates: DEFAULT_CARGO_TEMPLATES,
-  placedCargo: DEFAULT_PLACED_CARGO,
-  selectedCargoId: DEFAULT_PLACED_CARGO[0]?.id ?? null,
+export const usePlannerStore = create<PlannerState>()(
+  persist(
+    (set) => ({
+      cargoSpace: DEFAULT_CARGO_SPACE,
+      cargoTemplates: DEFAULT_CARGO_TEMPLATES,
+      placedCargo: DEFAULT_PLACED_CARGO,
+      selectedCargoId: DEFAULT_PLACED_CARGO[0]?.id ?? null,
 
-  selectCargo: (cargoId) => {
-    set({
-      selectedCargoId: cargoId,
-    });
-  },
+      selectCargo: (cargoId) => {
+        set({
+          selectedCargoId: cargoId,
+        });
+      },
 
-  moveCargo: (cargoId, position) => {
-    set((state) => ({
-      placedCargo: state.placedCargo.map((cargo) =>
-        cargo.id === cargoId
-          ? {
-              ...cargo,
-              position,
-            }
-          : cargo,
-      ),
-    }));
-  },
-  rotateCargo: (cargoId, orientation) => {
-    set((state) => ({
-      placedCargo: state.placedCargo.map((cargo) =>
-        cargo.id === cargoId
-          ? {
-              ...cargo,
-              orientation,
-            }
-          : cargo,
-      ),
-    }));
-  },
-  toggleCargoLock: (cargoId) => {
-    set((state) => ({
-      placedCargo: state.placedCargo.map((cargo) =>
-        cargo.id === cargoId
-          ? {
-              ...cargo,
-              locked: !cargo.locked,
-            }
-          : cargo,
-      ),
-    }));
-  },
-  duplicateCargo: (sourceCargoId, duplicateCargoId, position) => {
-    set((state) => {
-      const sourceCargo = state.placedCargo.find(
-        (cargo) => cargo.id === sourceCargoId,
-      );
+      moveCargo: (cargoId, position) => {
+        set((state) => ({
+          placedCargo: state.placedCargo.map((cargo) =>
+            cargo.id === cargoId
+              ? {
+                  ...cargo,
+                  position,
+                }
+              : cargo,
+          ),
+        }));
+      },
+      rotateCargo: (cargoId, orientation) => {
+        set((state) => ({
+          placedCargo: state.placedCargo.map((cargo) =>
+            cargo.id === cargoId
+              ? {
+                  ...cargo,
+                  orientation,
+                }
+              : cargo,
+          ),
+        }));
+      },
+      toggleCargoLock: (cargoId) => {
+        set((state) => ({
+          placedCargo: state.placedCargo.map((cargo) =>
+            cargo.id === cargoId
+              ? {
+                  ...cargo,
+                  locked: !cargo.locked,
+                }
+              : cargo,
+          ),
+        }));
+      },
+      duplicateCargo: (sourceCargoId, duplicateCargoId, position) => {
+        set((state) => {
+          const sourceCargo = state.placedCargo.find(
+            (cargo) => cargo.id === sourceCargoId,
+          );
 
-      if (!sourceCargo) {
-        return state;
-      }
+          if (!sourceCargo) {
+            return state;
+          }
 
-      return {
-        placedCargo: [
-          ...state.placedCargo,
-          {
-            ...sourceCargo,
-            id: duplicateCargoId,
-            position,
-            locked: false,
+          return {
+            placedCargo: [
+              ...state.placedCargo,
+              {
+                ...sourceCargo,
+                id: duplicateCargoId,
+                position,
+                locked: false,
+              },
+            ],
+            selectedCargoId: duplicateCargoId,
+          };
+        });
+      },
+      removeCargo: (cargoId) => {
+        set((state) => {
+          const nextPlacedCargo = state.placedCargo.filter(
+            (cargo) => cargo.id !== cargoId,
+          );
+
+          const nextSelectedCargoId =
+            state.selectedCargoId === cargoId
+              ? (nextPlacedCargo[0]?.id ?? null)
+              : state.selectedCargoId;
+
+          return {
+            placedCargo: nextPlacedCargo,
+            selectedCargoId: nextSelectedCargoId,
+          };
+        });
+      },
+      addCargo: (cargoTemplate, placedCargo) => {
+        set((state) => ({
+          cargoTemplates: [...state.cargoTemplates, cargoTemplate],
+          placedCargo: [...state.placedCargo, placedCargo],
+          selectedCargoId: placedCargo.id,
+        }));
+      },
+      resetProject: () => {
+        set({
+          cargoSpace: {
+            ...DEFAULT_CARGO_SPACE,
           },
-        ],
-        selectedCargoId: duplicateCargoId,
-      };
-    });
-  },
-  removeCargo: (cargoId) => {
-    set((state) => {
-      const nextPlacedCargo = state.placedCargo.filter(
-        (cargo) => cargo.id !== cargoId,
-      );
-
-      const nextSelectedCargoId =
-        state.selectedCargoId === cargoId
-          ? (nextPlacedCargo[0]?.id ?? null)
-          : state.selectedCargoId;
-
-      return {
-        placedCargo: nextPlacedCargo,
-        selectedCargoId: nextSelectedCargoId,
-      };
-    });
-  },
-  addCargo: (cargoTemplate, placedCargo) => {
-    set((state) => ({
-      cargoTemplates: [...state.cargoTemplates, cargoTemplate],
-      placedCargo: [...state.placedCargo, placedCargo],
-      selectedCargoId: placedCargo.id,
-    }));
-  },
-}));
+          cargoTemplates: DEFAULT_CARGO_TEMPLATES.map((template) => ({
+            ...template,
+          })),
+          placedCargo: DEFAULT_PLACED_CARGO.map((cargo) => ({
+            ...cargo,
+            position: {
+              ...cargo.position,
+            },
+          })),
+          selectedCargoId: DEFAULT_PLACED_CARGO[0]?.id ?? null,
+        });
+      },
+    }),
+    {
+      name: "cargo-load-planner-storage",
+      version: 1,
+    },
+  ),
+);

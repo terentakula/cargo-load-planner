@@ -40,6 +40,8 @@ function App() {
 
   const removeCargo = usePlannerStore((state) => state.removeCargo);
 
+  const resetProject = usePlannerStore((state) => state.resetProject);
+
   const selectedCargo = placedCargo.find(
     (cargo) => cargo.id === selectedCargoId,
   );
@@ -274,6 +276,19 @@ function App() {
     setIsCargoFormOpen(false);
   };
 
+  const handleResetProject = () => {
+    const confirmed = window.confirm(
+      "Сбросить проект? Все созданные грузы и изменения раскладки будут удалены.",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    resetProject();
+    setIsCargoFormOpen(false);
+  };
+
   const canRotateX = canRotateSelectedCargo("x");
   const canRotateY = canRotateSelectedCargo("y");
   const canRotateZ = canRotateSelectedCargo("z");
@@ -324,16 +339,26 @@ function App() {
           </div>
 
           <div className="cargo-list">
-            <button
-              className="rotation-button cargo-create-trigger"
-              type="button"
-              aria-expanded={isCargoFormOpen}
-              onClick={() => {
-                setIsCargoFormOpen((currentValue) => !currentValue);
-              }}
-            >
-              {isCargoFormOpen ? "Скрыть форму" : "Добавить груз"}
-            </button>
+            <div className="cargo-toolbar">
+              <button
+                className="rotation-button cargo-create-trigger"
+                type="button"
+                aria-expanded={isCargoFormOpen}
+                onClick={() => {
+                  setIsCargoFormOpen((currentValue) => !currentValue);
+                }}
+              >
+                {isCargoFormOpen ? "Скрыть форму" : "Добавить груз"}
+              </button>
+
+              <button
+                className="rotation-button cargo-reset-button"
+                type="button"
+                onClick={handleResetProject}
+              >
+                Сбросить проект
+              </button>
+            </div>
 
             {isCargoFormOpen && (
               <CargoCreateForm
@@ -376,8 +401,8 @@ function App() {
                     </strong>
 
                     <span className="cargo-list__meta">
-                      {cargoTemplate.lengthMm.toLocaleString("ru-RU")} ×{" "}
-                      {cargoTemplate.widthMm.toLocaleString("ru-RU")} ×{" "}
+                      {cargoTemplate.lengthMm.toLocaleString("ru-RU")} *{" "}
+                      {cargoTemplate.widthMm.toLocaleString("ru-RU")} *{" "}
                       {cargoTemplate.heightMm.toLocaleString("ru-RU")} мм
                     </span>
 
