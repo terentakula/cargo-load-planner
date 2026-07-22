@@ -414,9 +414,18 @@
 
 .cargo-toolbar {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-xs);
   margin-bottom: var(--space-md);
+}
+
+.cargo-auto-arrange-button {
+  border-color: rgba(34, 197, 94, 0.45);
+  color: #86efac;
+}
+
+.cargo-auto-arrange-button:hover:not(:disabled) {
+  border-color: #22c55e;
+  background: rgba(34, 197, 94, 0.12);
 }
 
 .cargo-create-trigger,

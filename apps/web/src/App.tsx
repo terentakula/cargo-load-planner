@@ -16,6 +16,7 @@ import type {
   CargoTemplate,
   PlacedCargo,
 } from "./features/planner/model/types";
+import { arrangeCargoOnFloor } from "@cargo-load-planner/packing-engine";
 
 function App() {
   const [isCargoFormOpen, setIsCargoFormOpen] = useState(false);
@@ -41,6 +42,8 @@ function App() {
   const removeCargo = usePlannerStore((state) => state.removeCargo);
 
   const resetProject = usePlannerStore((state) => state.resetProject);
+
+  const applyCargoLayout = usePlannerStore((state) => state.applyCargoLayout);
 
   const selectedCargo = placedCargo.find(
     (cargo) => cargo.id === selectedCargoId,
@@ -289,6 +292,38 @@ function App() {
     setIsCargoFormOpen(false);
   };
 
+  const handleAutoArrange = () => {
+    if (placedCargo.length === 0) {
+      window.alert("Добавьте хотя бы один груз.");
+
+      return;
+    }
+
+    const result = arrangeCargoOnFloor({
+      cargoSpace,
+      placedCargo,
+      cargoTemplates,
+    });
+
+    if (result.unplacedCargoIds.length > 0) {
+      window.alert(
+        `Автоматическая расстановка не выполнена. Не удалось разместить грузов: ${result.unplacedCargoIds.length}.`,
+      );
+
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Выполнить автоматическую расстановку? Незаблокированные грузы будут перемещены.",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    applyCargoLayout(result.placedCargo);
+  };
+
   const canRotateX = canRotateSelectedCargo("x");
   const canRotateY = canRotateSelectedCargo("y");
   const canRotateZ = canRotateSelectedCargo("z");
@@ -349,6 +384,15 @@ function App() {
                 }}
               >
                 {isCargoFormOpen ? "Скрыть форму" : "Добавить груз"}
+              </button>
+
+              <button
+                className="rotation-button cargo-auto-arrange-button"
+                type="button"
+                disabled={placedCargo.length === 0}
+                onClick={handleAutoArrange}
+              >
+                Авторасстановка
               </button>
 
               <button
