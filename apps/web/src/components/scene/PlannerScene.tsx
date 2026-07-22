@@ -16,6 +16,9 @@ import {
   getSupportedCargoPosition,
   isCargoSupportingAnotherCargo,
 } from "../../features/planner/lib/support";
+import {
+  isWaitingZonePositionAvailable,
+} from "@cargo-load-planner/packing-engine";
 
 export function PlannerScene() {
   const [draggingCargoId, setDraggingCargoId] = useState<string | null>(null);
@@ -33,20 +36,49 @@ export function PlannerScene() {
   const moveCargo = usePlannerStore((state) => state.moveCargo);
 
   const validateCargoPosition = useCallback(
-    (cargoId: string, position: CargoPosition) => {
-      return isCargoPositionAvailable({
+  (cargoId: string, position: CargoPosition) => {
+    const candidateCargo = placedCargo.find(
+      (cargo) => cargo.id === cargoId,
+    );
+
+    if (!candidateCargo) {
+      return false;
+    }
+
+    const availableInsideCargoSpace =
+      isCargoPositionAvailable({
         cargoId,
         position,
         placedCargo,
         cargoTemplates,
         cargoSpace,
       });
-    },
-    [cargoSpace, cargoTemplates, placedCargo],
-  );
+
+    const availableInWaitingZone =
+      isWaitingZonePositionAvailable({
+        candidateCargo,
+        position,
+        cargoSpace,
+        placedCargo,
+        cargoTemplates,
+      });
+
+    return (
+      availableInsideCargoSpace ||
+      availableInWaitingZone
+    );
+  },
+  [cargoSpace, cargoTemplates, placedCargo],
+);
 
   const snapCargoPosition = useCallback(
     (cargoId: string, position: CargoPosition): CargoPosition => {
+      if (position.xMm >= cargoSpace.lengthMm) {
+  return {
+    ...position,
+    yMm: 0,
+  };
+}
       return getSnappedCargoPosition({
         cargoId,
         position,
@@ -59,16 +91,23 @@ export function PlannerScene() {
   );
 
   const supportCargoPosition = useCallback(
-    (cargoId: string, position: CargoPosition): CargoPosition => {
-      return getSupportedCargoPosition({
-        cargoId,
-        position,
-        placedCargo,
-        cargoTemplates,
-      });
-    },
-    [cargoTemplates, placedCargo],
-  );
+  (cargoId: string, position: CargoPosition): CargoPosition => {
+    if (position.xMm >= cargoSpace.lengthMm) {
+      return {
+        ...position,
+        yMm: 0,
+      };
+    }
+
+    return getSupportedCargoPosition({
+      cargoId,
+      position,
+      placedCargo,
+      cargoTemplates,
+    });
+  },
+  [cargoSpace, cargoTemplates, placedCargo],
+);
 
   return (
     <Canvas

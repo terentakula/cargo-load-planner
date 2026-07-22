@@ -7,7 +7,6 @@ import {
   type CargoRotationAxis,
 } from "./features/planner/lib/orientation";
 import { getCargoTopLoadKg } from "./features/planner/lib/load";
-import { findAvailableFloorPosition } from "./features/planner/lib/placement";
 import { isCargoSupportingAnotherCargo } from "./features/planner/lib/support";
 import { useState } from "react";
 import { CargoCreateForm } from "./features/planner/components/CargoCreateForm";
@@ -16,7 +15,11 @@ import type {
   CargoTemplate,
   PlacedCargo,
 } from "./features/planner/model/types";
-import { arrangeCargoOnFloor } from "@cargo-load-planner/packing-engine";
+import {
+  arrangeCargoOnFloor,
+  findAvailableWaitingZonePosition,
+  isWaitingZonePositionAvailable,
+} from "@cargo-load-planner/packing-engine";
 
 function App() {
   const [isCargoFormOpen, setIsCargoFormOpen] = useState(false);
@@ -93,14 +96,29 @@ function App() {
       axis,
     );
 
-    return isCargoPositionAvailable({
-      cargoId: selectedCargo.id,
-      position: selectedCargo.position,
-      orientation: nextOrientation,
-      cargoSpace,
-      placedCargo,
-      cargoTemplates,
-    });
+    const candidateCargo: PlacedCargo = {
+  ...selectedCargo,
+  orientation: nextOrientation,
+};
+
+const availableInsideCargoSpace = isCargoPositionAvailable({
+  cargoId: selectedCargo.id,
+  position: selectedCargo.position,
+  orientation: nextOrientation,
+  cargoSpace,
+  placedCargo,
+  cargoTemplates,
+});
+
+const availableInWaitingZone = isWaitingZonePositionAvailable({
+  candidateCargo,
+  position: selectedCargo.position,
+  cargoSpace,
+  placedCargo,
+  cargoTemplates,
+});
+
+return availableInsideCargoSpace || availableInWaitingZone;
   };
 
   const handleRotateCargo = (axis: CargoRotationAxis) => {
@@ -143,18 +161,18 @@ function App() {
       locked: false,
     };
 
-    const availablePosition = findAvailableFloorPosition({
-      candidateCargo,
-      cargoSpace,
-      placedCargo,
-      cargoTemplates,
-    });
+    const availablePosition = findAvailableWaitingZonePosition({
+  candidateCargo,
+  cargoSpace,
+  placedCargo,
+  cargoTemplates,
+});
 
-    if (!availablePosition) {
-      window.alert("Для копии не найдено свободное место на полу кузова.");
+if (!availablePosition) {
+  window.alert("В зоне ожидания не найдено свободное место для копии.");
 
-      return;
-    }
+  return;
+}
 
     duplicateCargo(selectedCargo.id, duplicateCargoId, availablePosition);
   };
@@ -256,20 +274,18 @@ function App() {
       locked: false,
     };
 
-    const availablePosition = findAvailableFloorPosition({
-      candidateCargo,
-      cargoSpace,
-      placedCargo,
-      cargoTemplates: [...cargoTemplates, cargoTemplate],
-    });
+    const availablePosition = findAvailableWaitingZonePosition({
+  candidateCargo,
+  cargoSpace,
+  placedCargo,
+  cargoTemplates: [...cargoTemplates, cargoTemplate],
+});
 
-    if (!availablePosition) {
-      window.alert(
-        "Груз не помещается в кузове или на полу нет подходящего свободного места.",
-      );
+if (!availablePosition) {
+  window.alert("В зоне ожидания не найдено свободное место для нового груза.");
 
-      return;
-    }
+  return;
+}
 
     addCargo(cargoTemplate, {
       ...candidateCargo,
@@ -392,7 +408,7 @@ function App() {
                 disabled={placedCargo.length === 0}
                 onClick={handleAutoArrange}
               >
-                Авторасстановка
+                Экспериментальная Авторасстановка
               </button>
 
               <button

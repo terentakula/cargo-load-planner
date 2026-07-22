@@ -5,62 +5,59 @@ export type {
   CargoSpaceType,
   CargoTemplate,
   PlacedCargo,
-} from './model/types'
+} from "./model/types";
 
 export {
   getOrientedCargoSize,
   getRotatedCargoOrientation,
-} from './orientation'
+} from "./orientation";
 
-export type {
-  CargoRotationAxis,
-  OrientedCargoSize,
-} from './orientation'
+export type { CargoRotationAxis, OrientedCargoSize } from "./orientation";
 
-export {
-  getCargoTopLoadKg,
-  isCargoStackValid,
-} from './load'
+export { getCargoTopLoadKg, isCargoStackValid } from "./load";
 
 export {
   cargoBoundsIntersect,
   getCargoBounds,
   isCargoPositionAvailable,
-} from './collision'
+} from "./collision";
 
-export type {
-  CargoBounds,
-  PositionValidationInput,
-} from './collision'
+export type { CargoBounds, PositionValidationInput } from "./collision";
 
 export {
   getSupportedCargoPosition,
   isCargoSupportingAnotherCargo,
-} from './support'
+} from "./support";
+
+export { getSnappedCargoPosition } from "./snapping";
+
+export type { SnapCargoPositionInput } from "./snapping";
 
 export {
-  getSnappedCargoPosition,
-} from './snapping'
-
-export type {
-  SnapCargoPositionInput,
-} from './snapping'
-
-export {
+  findAvailableCargoPositions,
   findAvailableFloorPosition,
-} from './placement'
+  findAvailableFloorPositions,
+} from "./placement";
 
-export type {
-  FindAvailableFloorPositionInput,
-} from './placement'
+export type { FindAvailableFloorPositionInput } from "./placement";
 
-export {
-  arrangeCargoOnFloor,
-} from './autoPacking'
+export { arrangeCargoOnFloor } from "./autoPacking";
 
 export type {
   ArrangeCargoOnFloorInput,
   ArrangeCargoOnFloorResult,
-} from './autoPacking'
+} from "./autoPacking";
 
-export const PACKING_ENGINE_VERSION = '0.1.0'
+export {
+  WAITING_ZONE_GAP_MM,
+  WAITING_ZONE_WIDTH_MULTIPLIER,
+  findAvailableWaitingZonePosition,
+  isWaitingZonePositionAvailable,
+} from "./waitingZone";
+
+export type {
+  FindWaitingZonePositionInput,
+  WaitingZonePositionInput,
+} from "./waitingZone";
+
+export const PACKING_ENGINE_VERSION = "0.1.0";

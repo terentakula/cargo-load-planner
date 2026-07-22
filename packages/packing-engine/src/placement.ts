@@ -22,19 +22,19 @@ function clamp(
   return Math.min(Math.max(value, minimum), maximum)
 }
 
-export function findAvailableFloorPosition({
+export function findAvailableFloorPositions({
   candidateCargo,
   cargoSpace,
   placedCargo,
   cargoTemplates,
-}: FindAvailableFloorPositionInput): CargoPosition | null {
+}: FindAvailableFloorPositionInput): CargoPosition[] {
   const candidateTemplate = cargoTemplates.find(
     (template) =>
       template.id === candidateCargo.templateId,
   )
 
   if (!candidateTemplate) {
-    return null
+    return []
   }
 
   const candidateSize = getOrientedCargoSize(
@@ -53,7 +53,7 @@ export function findAvailableFloorPosition({
     maximumZ < 0 ||
     candidateSize.yMm > cargoSpace.heightMm
   ) {
-    return null
+    return []
   }
 
   const xCandidates = new Set<number>([
@@ -153,28 +153,271 @@ export function findAvailableFloorPosition({
     return firstDistance - secondDistance
   })
 
-  for (const position of positions) {
-    const placedCargoWithCandidate = [
-      ...placedCargo,
-      {
-        ...candidateCargo,
-        position,
-      },
-    ]
+  return positions.filter((position) => {
+  const placedCargoWithCandidate = [
+    ...placedCargo,
+    {
+      ...candidateCargo,
+      position,
+    },
+  ]
 
-    const positionAvailable =
-      isCargoPositionAvailable({
-        cargoId: candidateCargo.id,
-        position,
-        cargoSpace,
-        placedCargo: placedCargoWithCandidate,
-        cargoTemplates,
-      })
+  return isCargoPositionAvailable({
+    cargoId: candidateCargo.id,
+    position,
+    cargoSpace,
+    placedCargo: placedCargoWithCandidate,
+    cargoTemplates,
+  })
+})
+}
 
-    if (positionAvailable) {
-      return position
-    }
+
+export function findAvailableFloorPosition(
+  input: FindAvailableFloorPositionInput,
+): CargoPosition | null {
+  return findAvailableFloorPositions(input)[0] ?? null
+}
+
+export function findAvailableCargoPositions(
+  input: FindAvailableFloorPositionInput,
+): CargoPosition[] {
+  const {
+    candidateCargo,
+    cargoSpace,
+    placedCargo,
+    cargoTemplates,
+  } = input
+
+  const floorPositions =
+    findAvailableFloorPositions(input)
+
+  const candidateTemplate = cargoTemplates.find(
+    (template) =>
+      template.id === candidateCargo.templateId,
+  )
+
+  if (!candidateTemplate) {
+    return floorPositions
   }
 
-  return null
+  const candidateSize = getOrientedCargoSize(
+    candidateTemplate,
+    candidateCargo.orientation,
+  )
+
+  const positionKeys = new Set(
+    floorPositions.map(
+      (position) =>
+        `${position.xMm}:${position.yMm}:${position.zMm}`,
+    ),
+  )
+
+  const stackPositions: CargoPosition[] = []
+
+  placedCargo.forEach((supportCargo) => {
+    const supportTemplate = cargoTemplates.find(
+      (template) =>
+        template.id === supportCargo.templateId,
+    )
+
+    if (
+      !supportTemplate ||
+      !supportTemplate.stackable
+    ) {
+      return
+    }
+
+    const supportSize = getOrientedCargoSize(
+      supportTemplate,
+      supportCargo.orientation,
+    )
+
+    const supportTopY =
+      supportCargo.position.yMm +
+      supportSize.yMm
+
+    if (
+      supportTopY + candidateSize.yMm >
+      cargoSpace.heightMm
+    ) {
+      return
+    }
+
+    const minimumX = supportCargo.position.xMm
+
+    const maximumX =
+      supportCargo.position.xMm +
+      supportSize.xMm -
+      candidateSize.xMm
+
+    const minimumZ = supportCargo.position.zMm
+
+    const maximumZ =
+      supportCargo.position.zMm +
+      supportSize.zMm -
+      candidateSize.zMm
+
+    if (
+      maximumX < minimumX ||
+      maximumZ < minimumZ
+    ) {
+      return
+    }
+
+    const xCandidates = new Set<number>([
+      minimumX,
+      maximumX,
+    ])
+
+    const zCandidates = new Set<number>([
+      minimumZ,
+      maximumZ,
+    ])
+
+    placedCargo.forEach((otherCargo) => {
+      const otherTemplate = cargoTemplates.find(
+        (template) =>
+          template.id === otherCargo.templateId,
+      )
+
+      if (!otherTemplate) {
+        return
+      }
+
+      const otherSize = getOrientedCargoSize(
+        otherTemplate,
+        otherCargo.orientation,
+      )
+
+      const candidateTopY =
+        supportTopY + candidateSize.yMm
+
+      const otherBottomY =
+        otherCargo.position.yMm
+
+      const otherTopY =
+        otherCargo.position.yMm +
+        otherSize.yMm
+
+      const overlapsByY =
+        supportTopY < otherTopY &&
+        candidateTopY > otherBottomY
+
+      if (!overlapsByY) {
+        return
+      }
+
+      xCandidates.add(
+        clamp(
+          otherCargo.position.xMm,
+          minimumX,
+          maximumX,
+        ),
+      )
+
+      xCandidates.add(
+        clamp(
+          otherCargo.position.xMm +
+            otherSize.xMm,
+          minimumX,
+          maximumX,
+        ),
+      )
+
+      xCandidates.add(
+        clamp(
+          otherCargo.position.xMm -
+            candidateSize.xMm,
+          minimumX,
+          maximumX,
+        ),
+      )
+
+      zCandidates.add(
+        clamp(
+          otherCargo.position.zMm,
+          minimumZ,
+          maximumZ,
+        ),
+      )
+
+      zCandidates.add(
+        clamp(
+          otherCargo.position.zMm +
+            otherSize.zMm,
+          minimumZ,
+          maximumZ,
+        ),
+      )
+
+      zCandidates.add(
+        clamp(
+          otherCargo.position.zMm -
+            candidateSize.zMm,
+          minimumZ,
+          maximumZ,
+        ),
+      )
+    })
+
+    xCandidates.forEach((xMm) => {
+      zCandidates.forEach((zMm) => {
+        const position: CargoPosition = {
+          xMm,
+          yMm: supportTopY,
+          zMm,
+        }
+
+        const positionKey =
+          `${position.xMm}:${position.yMm}:${position.zMm}`
+
+        if (positionKeys.has(positionKey)) {
+          return
+        }
+
+        const placedCargoWithCandidate = [
+          ...placedCargo,
+          {
+            ...candidateCargo,
+            position,
+          },
+        ]
+
+        const positionAvailable =
+          isCargoPositionAvailable({
+            cargoId: candidateCargo.id,
+            position,
+            cargoSpace,
+            placedCargo:
+              placedCargoWithCandidate,
+            cargoTemplates,
+          })
+
+        if (!positionAvailable) {
+          return
+        }
+
+        positionKeys.add(positionKey)
+        stackPositions.push(position)
+      })
+    })
+  })
+
+  stackPositions.sort((first, second) => {
+    if (first.yMm !== second.yMm) {
+      return first.yMm - second.yMm
+    }
+
+    if (first.xMm !== second.xMm) {
+      return first.xMm - second.xMm
+    }
+
+    return first.zMm - second.zMm
+  })
+
+  return [
+    ...floorPositions,
+    ...stackPositions,
+  ]
 }

@@ -1,21 +1,25 @@
-import { Edges } from '@react-three/drei'
-import { DoubleSide } from 'three'
-import type { CargoSpace as CargoSpaceModel } from '../../features/planner/model/types'
-import { millimetersToSceneUnits } from '../../shared/lib/units'
+import { Edges } from "@react-three/drei";
+import { DoubleSide } from "three";
+import type { CargoSpace as CargoSpaceModel } from "../../features/planner/model/types";
+import { millimetersToSceneUnits } from "../../shared/lib/units";
+import {
+  WAITING_ZONE_GAP_MM,
+  WAITING_ZONE_WIDTH_MULTIPLIER,
+} from "@cargo-load-planner/packing-engine";
 
 type Props = {
-  cargoSpace: CargoSpaceModel
-}
+  cargoSpace: CargoSpaceModel;
+};
 
-const WALL_THICKNESS = 0.06
-const FLOOR_THICKNESS = 0.08
+const WALL_THICKNESS = 0.06;
+const FLOOR_THICKNESS = 0.08;
 
 function SpaceWall({
   position,
   size,
 }: {
-  position: [number, number, number]
-  size: [number, number, number]
+  position: [number, number, number];
+  size: [number, number, number];
 }) {
   return (
     <mesh position={position} receiveShadow>
@@ -33,27 +37,32 @@ function SpaceWall({
 
       <Edges color="#38bdf8" />
     </mesh>
-  )
+  );
 }
 
 export function CargoSpace({ cargoSpace }: Props) {
-  const length = millimetersToSceneUnits(cargoSpace.lengthMm)
-  const width = millimetersToSceneUnits(cargoSpace.widthMm)
-  const height = millimetersToSceneUnits(cargoSpace.heightMm)
+  const length = millimetersToSceneUnits(cargoSpace.lengthMm);
+  const width = millimetersToSceneUnits(cargoSpace.widthMm);
+  const height = millimetersToSceneUnits(cargoSpace.heightMm);
 
-  const halfLength = length / 2
-  const halfWidth = width / 2
-  const halfHeight = height / 2
+  const waitingZoneGap = millimetersToSceneUnits(WAITING_ZONE_GAP_MM);
+
+  const waitingZoneLength = length;
+
+  const waitingZoneWidth = width * WAITING_ZONE_WIDTH_MULTIPLIER;
+
+  const waitingZoneCenterZ = 0
+
+  const waitingZoneCenterX = length + waitingZoneGap;
+
+  const halfLength = length / 2;
+  const halfWidth = width / 2;
+  const halfHeight = height / 2;
 
   return (
     <group>
-      <mesh
-        position={[0, -FLOOR_THICKNESS / 2, 0]}
-        receiveShadow
-      >
-        <boxGeometry
-          args={[length, FLOOR_THICKNESS, width]}
-        />
+      <mesh position={[0, -FLOOR_THICKNESS / 2, 0]} receiveShadow>
+        <boxGeometry args={[length, FLOOR_THICKNESS, width]} />
 
         <meshStandardMaterial
           color="#334155"
@@ -64,44 +73,43 @@ export function CargoSpace({ cargoSpace }: Props) {
         <Edges color="#64748b" />
       </mesh>
 
-      <SpaceWall
+      <mesh
         position={[
-          0,
-          halfHeight,
-          -halfWidth - WALL_THICKNESS / 2,
+          waitingZoneCenterX,
+          -FLOOR_THICKNESS / 2,
+          waitingZoneCenterZ,
         ]}
-        size={[
-          length,
-          height,
-          WALL_THICKNESS,
-        ]}
+        receiveShadow
+      >
+        <boxGeometry
+          args={[waitingZoneLength, FLOOR_THICKNESS, waitingZoneWidth]}
+        />
+
+        <meshStandardMaterial
+          color="#78350f"
+          transparent
+          opacity={0.42}
+          roughness={0.9}
+          metalness={0.02}
+        />
+
+        <Edges color="#f59e0b" />
+      </mesh>
+
+      <SpaceWall
+        position={[0, halfHeight, -halfWidth - WALL_THICKNESS / 2]}
+        size={[length, height, WALL_THICKNESS]}
       />
 
       <SpaceWall
-        position={[
-          0,
-          halfHeight,
-          halfWidth + WALL_THICKNESS / 2,
-        ]}
-        size={[
-          length,
-          height,
-          WALL_THICKNESS,
-        ]}
+        position={[0, halfHeight, halfWidth + WALL_THICKNESS / 2]}
+        size={[length, height, WALL_THICKNESS]}
       />
 
       <SpaceWall
-        position={[
-          -halfLength - WALL_THICKNESS / 2,
-          halfHeight,
-          0,
-        ]}
-        size={[
-          WALL_THICKNESS,
-          height,
-          width + WALL_THICKNESS * 2,
-        ]}
+        position={[-halfLength - WALL_THICKNESS / 2, halfHeight, 0]}
+        size={[WALL_THICKNESS, height, width + WALL_THICKNESS * 2]}
       />
     </group>
-  )
+  );
 }

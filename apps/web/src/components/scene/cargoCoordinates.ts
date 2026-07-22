@@ -9,6 +9,10 @@ import {
   sceneUnitsToMillimeters,
 } from "../../shared/lib/units";
 import { getOrientedCargoSize } from "../../features/planner/lib/orientation";
+import {
+  WAITING_ZONE_GAP_MM,
+  WAITING_ZONE_WIDTH_MULTIPLIER,
+} from "@cargo-load-planner/packing-engine";
 
 export type ScenePosition = [number, number, number];
 
@@ -79,13 +83,27 @@ export function getClampedCargoPositionFromSceneCenter(
     centerZ + cargoSpaceWidth / 2 - cargoWidth / 2,
   );
 
-  const maximumX = Math.max(0, cargoSpace.lengthMm - orientedSize.xMm);
+  const maximumX = Math.max(
+    0,
+    cargoSpace.lengthMm * 2 + WAITING_ZONE_GAP_MM - orientedSize.xMm,
+  );
 
-  const maximumZ = Math.max(0, cargoSpace.widthMm - orientedSize.zMm);
+  const waitingZoneStartX = cargoSpace.lengthMm + WAITING_ZONE_GAP_MM;
+
+  const isInWaitingZone = rawX >= waitingZoneStartX;
+
+  const additionalWaitingZoneWidthMm =
+    cargoSpace.widthMm * (WAITING_ZONE_WIDTH_MULTIPLIER - 1);
+
+  const minimumZ = isInWaitingZone ? -additionalWaitingZoneWidthMm / 2 : 0;
+
+  const maximumZ = isInWaitingZone
+    ? cargoSpace.widthMm + additionalWaitingZoneWidthMm / 2 - orientedSize.zMm
+    : Math.max(0, cargoSpace.widthMm - orientedSize.zMm);
 
   return {
     xMm: clamp(rawX, 0, maximumX),
     yMm: 0,
-    zMm: clamp(rawZ, 0, maximumZ),
+    zMm: clamp(rawZ, minimumZ, maximumZ),
   };
 }
